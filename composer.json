@@ -1,0 +1,22 @@
+{
+    "name": "aryelgois/medools-router",
+    "description": "A Router class to bootstrap RESTful APIs based on aryelgois/medools",
+    "keywords": ["Medools", "RESTful", "API"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aryel Mota Góis",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.0",
+        "aryelgois/utils": "^0.4",
+        "aryelgois/medools": "^4.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "aryelgois\\Medools\\": "src/"
+        }
+    }
+}
