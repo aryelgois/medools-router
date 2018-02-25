@@ -8,5 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 
 [Unreleased]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...develop
