@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "50009ceab826c0684a457f1149f95cd8",
+    "content-hash": "f46fbcca0833b37ad9f688719f8b5264",
     "packages": [
         {
             "name": "aryelgois/medools",
@@ -159,7 +159,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.0"
+        "php": "^7.0",
+        "ext-zlib": "*"
     },
     "platform-dev": []
 }

@@ -11,6 +11,7 @@
     ],
     "require": {
         "php": "^7.0",
+        "ext-zlib": "*",
         "aryelgois/utils": "^0.4",
         "aryelgois/medools": "^4.2"
     },
