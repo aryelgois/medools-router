@@ -9,6 +9,7 @@ namespace aryelgois\Medools;
 
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
+use aryelgois\Medools\Router\Resource;
 use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
@@ -21,7 +22,7 @@ use aryelgois\Medools\Exceptions\UnknownColumnException;
 class Router
 {
     /*
-     * Configuration and Data
+     * Router configurations
      * =========================================================================
      */
 
@@ -32,6 +33,8 @@ class Router
      */
     const CONFIGURABLE = [
         'always_expand' => 'boolean',
+        'default_content_type' => 'array',
+        'extensions' => 'array',
         'implemented_methods' => 'array',
         'meta' => 'array',
         'per_page' => 'integer',
@@ -45,6 +48,30 @@ class Router
      * @var boolean
      */
     protected $always_expand = false;
+
+    /**
+     * List of HTTP methods implemented
+     *
+     * @var float[]
+     */
+    protected $default_content_type = [
+        'application/json' => [
+            'action' => null,
+            'priority' => 1,
+        ],
+    ];
+
+    /**
+     * List of known extensions and their related content type
+     *
+     * Useful to ensure browser explorability via address bar
+     *
+     * It is intended to be configured in __construct() for custom content types
+     * your resources use.
+     *
+     * @var string[]
+     */
+    protected $extensions = [];
 
     /**
      * List of HTTP methods implemented
@@ -68,23 +95,6 @@ class Router
         'version' => 'v0.1.0',
         'documentation' => 'https://www.github.com/aryelgois/medools-router'
     ];
-
-    /**
-     * Requested HTTP method
-     *
-     * @var string
-     */
-    protected $method;
-
-    /**
-     * List of resources available in the Router
-     *
-     * NOTE:
-     * - Resource names should be in plural
-     *
-     * @var array[]
-     */
-    protected $resources = [];
 
     /**
      * Limit how many resources can be returned in a collection request
@@ -119,6 +129,35 @@ class Router
     protected $zlib_compression = true;
 
     /*
+     * Router data
+     * =========================================================================
+     */
+
+    /**
+     * Router's cache
+     *
+     * @var mixed[]
+     */
+    protected $cache = [];
+
+    /**
+     * Requested HTTP method
+     *
+     * @var string
+     */
+    protected $method;
+
+    /**
+     * List of resources available in the Router
+     *
+     * NOTE:
+     * - Resource names should be in plural
+     *
+     * @var array[]
+     */
+    protected $resources = [];
+
+    /*
      * Errors
      * =========================================================================
      */
@@ -130,11 +169,12 @@ class Router
     const ERROR_INVALID_RESOURCE_OFFSET = 5;
     const ERROR_INVALID_RESOURCE_FOREIGN = 6;
     const ERROR_RESOURCE_NOT_FOUND = 7;
-    const ERROR_METHOD_NOT_ALLOWED = 8;
-    const ERROR_UNSUPPORTED_MEDIA_TYPE = 9;
-    const ERROR_INVALID_PAYLOAD = 10;
-    const ERROR_INVALID_QUERY_PARAMETER = 11;
-    const ERROR_UNKNOWN_FIELDS = 12;
+    const ERROR_UNSUPPORTED_MEDIA_TYPE = 8;
+    const ERROR_INVALID_PAYLOAD = 9;
+    const ERROR_METHOD_NOT_ALLOWED = 10;
+    const ERROR_NOT_ACCEPTABLE = 11;
+    const ERROR_INVALID_QUERY_PARAMETER = 12;
+    const ERROR_UNKNOWN_FIELDS = 13;
 
     /*
      * Basic methods
@@ -207,7 +247,7 @@ class Router
         string $method,
         string $uri,
         string $accept,
-        string $type,
+        string $content_type,
         string $body
     ) {
         $this->method = strtoupper($method);
@@ -219,19 +259,28 @@ class Router
             $this->sendError(static::ERROR_METHOD_NOT_IMPLEMENTED, $message);
         }
 
-        $request = $this->processRoute($uri);
+        $resource = $this->processRoute($uri);
         $response = null;
 
         parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-        $data = $this->parseBody($type, $body);
+        $data = $this->parseBody($content_type, $body);
 
-        if ($request === null) {
+        if ($resource === null) {
             if ($this->method !== 'OPTIONS') {
                 $response = $this->requestRoot();
             }
         } else {
-            $resource = $request['name'];
-            $resource_data = $this->resources[$resource];
+            $resource_data = $this->resources[$resource->name];
+
+            $resource_accept = $this->extensions[$resource->extension] ?? null;
+            if ($resource_accept !== null) {
+                $resource_types = $this->computeResourceTypes($resource);
+                if (!array_key_exists($resource_accept, $resource_types)) {
+                    $message = "Resource '$resource->name' can not generate "
+                        . "content for '$resource->extension' extension";
+                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                }
+            }
 
             $methods = (array) ($resource_data['methods'] ?? null);
             if (!empty($methods)) {
@@ -250,10 +299,13 @@ class Router
                 }
             }
 
+            $type = (in_array($this->method, ['GET', 'HEAD']))
+                ? $this->parseAccept($resource, $resource_accept ?? $accept)
+                : null;
             if ($this->method !== 'OPTIONS') {
-                $response = ($request['type'] === 'collection')
-                    ? $this->requestCollection($request, $query, $data)
-                    : $this->requestResource($request, $query, $data);
+                $response = ($resource->type === 'collection')
+                    ? $this->requestCollection($resource, $query, $data, $type)
+                    : $this->requestResource($resource, $query, $data, $type);
             }
         }
 
@@ -279,21 +331,22 @@ class Router
     /**
      * When requested route points to a collection
      *
-     * @param array $request Processed route
-     * @param array $query   Parsed query
-     * @param array $data    Parsed data
+     * @param Resource $resource From processed route
+     * @param array    $query    Parsed query
+     * @param array    $data     Parsed data
+     * @param string   $type     Parsed accept
      *
      * @return array data for GET request
      */
     protected function requestCollection(
-        array $request,
+        Resource $resource,
         array $query,
-        array $data
+        array $data,
+        string $type = null
     ) {
-        $resource = $request['name'];
-        $resource_data = $this->resources[$resource];
-        $resource_class = $resource_data['model'];
-        $where = $request['where'];
+        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+        $resource_data = $this->resources[$resource->name];
+        $where = $resource->where;
 
         $fields = $this->parseFields($resource, $query['fields'] ?? '');
 
@@ -313,7 +366,10 @@ class Router
             $where['ORDER'] = $order;
         }
 
-        $per_page = $query['per_page'] ?? $this->per_page;
+        $per_page = ($safe_method || isset($query['page']))
+            ? $this->per_page
+            : 0;
+        $per_page = $query['per_page'] ?? $per_page;
         if ($per_page === 'all') {
             $per_page = 0;
         }
@@ -331,8 +387,8 @@ class Router
                 );
             }
 
-            if (in_array($this->method, ['GET', 'HEAD'])) {
-                $count = $this->countResource($resource, $where);
+            if ($safe_method) {
+                $count = $this->countResource($resource->name, $where);
                 $pages = ceil($count / $per_page);
                 $routes = [];
 
@@ -354,7 +410,7 @@ class Router
                 $routes['last'] = http_build_query($tmp);
 
                 foreach ($routes as &$route) {
-                    $route = $request['route'] . '?' . $route;
+                    $route = $resource->route . '?' . $route;
                 }
                 unset($route);
 
@@ -365,35 +421,121 @@ class Router
             $where['LIMIT'] = [($page - 1) * $per_page, $per_page];
         }
 
-        return $resource_class::dump($where, $fields);
+        $collection = $resource->model_class::dump($where, $fields);
+
+        if ($safe_method && $type !== null) {
+            $resource_types = $this->computeResourceTypes($resource);
+            $action = $resource_types[$type]['action'];
+            if (is_array($action)) {
+                $action = $action[$resource->type] ?? null;
+                if ($action === null) {
+                    header_remove("Link");
+                    header_remove("X-Total-Count");
+                    return;
+                }
+            }
+            if ($action !== null) {
+                header_remove("Link");
+                header_remove("X-Total-Count");
+                if (is_callable($action)) {
+                    return $action($resource, $fields);
+                } else {
+                    $message = "Content-Type '$type' for collection of resource"
+                        . " '$resource->name' has invalid action";
+                    $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
+                }
+            }
+        }
+
+        switch ($this->method) {
+            case 'DELETE':
+                return;
+                break;
+
+            case 'PATCH':
+                break;
+
+            case 'POST':
+                break;
+
+            case 'PUT':
+                $this->sendError(
+                    static::ERROR_METHOD_NOT_ALLOWED,
+                    'Collections do not allow PUT Method'
+                );
+                break;
+        }
+
+        return $collection;
     }
 
     /**
      * When requested route points to a resource
      *
-     * @param array $request Processed route
-     * @param array $query   Parsed query
-     * @param array $data    Parsed data
+     * @param Resource $resource From processed route
+     * @param array    $query    Parsed query
+     * @param array    $data     Parsed data
+     * @param string   $type     Parsed accept
      *
      * @return array data for GET request
      */
     protected function requestResource(
-        array $request,
+        Resource $resource,
         array $query,
-        array $data
+        array $data,
+        string $type = null
     ) {
-        $resource = $request['name'];
-        $resource_data = $this->resources[$resource];
-        $resource_class = $resource_data['model'];
-        $model = $resource_class::getInstance($request['where']);
+        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+        $resource_data = $this->resources[$resource->name];
+        $resource_class = $resource->model_class;
+        $model = $resource_class::getInstance($resource->where);
 
         $fields = $this->parseFields($resource, $query['fields'] ?? '');
+
+        if ($safe_method && $type !== null) {
+            $resource_types = $this->computeResourceTypes($resource);
+            $action = $resource_types[$type]['action'];
+            if (is_array($action)) {
+                $action = $action[$resource->type] ?? null;
+                if ($action === null) {
+                    return;
+                }
+            }
+            if ($action !== null) {
+                if (is_callable($action)) {
+                    return $action($resource, $fields);
+                } else {
+                    $message = "Content-Type '$type' for resource "
+                        . "'$resource->name' has invalid action";
+                    $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
+                }
+            }
+        }
+
+        switch ($this->method) {
+            case 'DELETE':
+                return;
+                break;
+
+            case 'PATCH':
+                break;
+
+            case 'POST':
+                $this->sendError(
+                    static::ERROR_METHOD_NOT_ALLOWED,
+                    'Resources do not allow POST Method'
+                );
+                break;
+
+            case 'PUT':
+                break;
+        }
 
         $expand = $query['expand'] ?? null;
         if ($expand === 'false' || !$this->always_expand && $expand === null) {
             $result = $model->getData();
 
-            if (in_array($this->method, ['GET', 'HEAD'])) {
+            if ($safe_method) {
                 $routes = [];
                 foreach ($resource_class::FOREIGN_KEYS as $column => $fk) {
                     foreach ($this->resources as $res_name => $res_data) {
@@ -450,19 +592,53 @@ class Router
     /**
      * Checks if a resource has all fields passed
      *
-     * @param string   $resource Resource name
+     * @param Resource $resource Resource
      * @param string[] $fields   List of fields to test
      */
-    protected function checkUnknownField(string $resource, array $fields)
+    protected function checkUnknownField(Resource $resource, array $fields)
     {
         try {
-            $this->resources[$resource]['model']::checkUnknownColumn($fields);
+            $resource->model_class::checkUnknownColumn($fields);
         } catch (UnknownColumnException $e) {
-            $this->sendError(
-                static::ERROR_UNKNOWN_FIELDS,
-                "Resource '$resource' " . explode(' ', $e->getMessage(), 2)[1]
-            );
+            $message = "Resource '$resource->name' "
+                . explode(' ', $e->getMessage(), 2)[1];
+            $this->sendError(static::ERROR_UNKNOWN_FIELDS, $message);
         }
+    }
+
+    /**
+     * Computes Resource Content Types
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param Resource $resource Resource
+     *
+     * @return array[]
+     */
+    protected function computeResourceTypes(Resource $resource)
+    {
+        $cached = $this->cache['resource_types'][$resource->name] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $resource_types = array_replace_recursive(
+            $this->default_content_type,
+            $this->resources[$resource->name]['content_type'] ?? []
+        );
+        foreach ($resource_types as $resource_type => &$data) {
+            if (!is_array($data) || !array_key_exists('action', $data)) {
+                $message = "Content-Type '$resource_type' for resource "
+                    . "'$resource->name' is invalid";
+                $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
+            }
+            $data['priority'] = $data['priority'] ?? 1;
+        }
+        unset($data);
+
+        $this->cache['resource_types'][$resource->name] = $resource_types;
+        return $resource_types;
     }
 
     /**
@@ -496,6 +672,39 @@ class Router
     }
 
     /**
+     * Returns key for first highest value
+     *
+     * @param float[] $list List of numbers between min and max
+     * @param float   $min  Min value to test
+     * @param float   $max  Max value to test
+     *
+     * @return string
+     * @return null   If no value was higher than $min
+     */
+    protected static function firstHigher(
+        array $list,
+        float $min = null,
+        float $max = null
+    ) {
+        $min = $min ?? 0;
+        $max = $max ?? 1;
+
+        $result = null;
+        $higher = $min;
+        foreach ($list as $key => $value) {
+            $value = Utils::numberLimit($value, $min, $max);
+            if ($value == $max) {
+                return $key;
+            } elseif ($value > $higher) {
+                $result = $key;
+                $higher = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Generates and send Link header
      *
      * @param string[] $routes List of routes
@@ -509,6 +718,78 @@ class Router
         if (!empty($links)) {
             header('Link: ' . implode(', ', $links));
         }
+    }
+
+    /**
+     * Parses Request Accept
+     *
+     * NOTE:
+     * - If $resource does not comply to $accept, but it does not forbid any of
+     *   $resource's content types (i.e. ';q=0'), this function returns the
+     *   first $resource's content type with highest priority. It is better to
+     *   return something the user doesn't complain about than a useless error
+     *
+     * @param Resource $resource Resource
+     * @param string   $accept   Request Accept
+     *
+     * @return string
+     */
+    protected function parseAccept(Resource $resource, string $accept)
+    {
+        $available_types = [];
+        $resource_types = $this->computeResourceTypes($resource);
+        foreach ($resource_types as $resource_type => $data) {
+            $available_types[$resource_type] = $data['priority'];
+        }
+
+        $list = [];
+        $accept_types = explode(',', $accept);
+        foreach ($accept_types as $fragment) {
+            $fragment = explode(';', $fragment);
+            $accept_type = trim($fragment[0]);
+            $priority = ((float) filter_var(
+                $fragment[1] ?? 1,
+                FILTER_SANITIZE_NUMBER_FLOAT,
+                FILTER_FLAG_ALLOW_FRACTION
+            ));
+            $priority = Utils::numberLimit($priority, 0, 1);
+            if (strpos($accept_type, '*') === false) {
+                if (array_key_exists($accept_type, $available_types)) {
+                    $list[$accept_type] = max(
+                        $list[$accept_type] ?? 0,
+                        $priority
+                    );
+                }
+            } else {
+                $priority -= 0.0001;
+                foreach ($available_types as $resource_type => $value) {
+                    if ($value > 0 && fnmatch($accept_type, $resource_type)) {
+                        $list[$resource_type] = max(
+                            $list[$resource_type] ?? 0,
+                            $priority
+                        );
+                    }
+                }
+            }
+        }
+
+        if (empty($list)) {
+            $result = static::firstHigher($available_types);
+            if ($result === null) {
+                $this->sendError(
+                    static::ERROR_INTERNAL_SERVER,
+                    "Resource '$resource->name' has invalid Content-Type"
+                );
+            }
+        } else {
+            $result = static::firstHigher($list);
+            if ($result === null) {
+                $message = "Resource '$resource->name' can not generate content"
+                    . ' complying to Accept header';
+                $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+            }
+        }
+        return $result;
     }
 
     /**
@@ -548,12 +829,12 @@ class Router
     /**
      * Parses fields query and validate against a resource
      *
-     * @param string $resource Resource name
-     * @param string $fields   Fields query parameter
+     * @param Resource $resource Resource
+     * @param string   $fields   Fields query parameter
      *
      * @return string[]
      */
-    protected function parseFields(string $resource, string $fields)
+    protected function parseFields(Resource $resource, string $fields)
     {
         $result = [];
         if ($fields !== '') {
@@ -568,20 +849,23 @@ class Router
      *
      * @param string $uri Route to be processed
      *
-     * @return array With format:
-     *               [
-     *                   'name' => key for $this->resources,
-     *                   'type' => 'resource' or 'collection',
-     *                   'where' => array for loading or dumping model,
-     *                   'route' => normalized and cleared route,
-     *               ]
-     * @return null  On failure
+     * @return Resource On success
+     * @return null     On failure
      */
     protected function processRoute(string $uri)
     {
         $route = trim(urldecode(parse_url($uri, PHP_URL_PATH)), '/');
         if ($route === '') {
             return;
+        }
+        $extension = null;
+        if (!empty($this->extensions)) {
+            $extension = pathinfo($uri, PATHINFO_EXTENSION);
+            if (array_key_exists($extension, $this->extensions)) {
+                $route = substr($route, 0, (strlen($extension) + 1) * -1);
+            } else {
+                $extension = null;
+            }
         }
         $route = explode('/', $route);
 
@@ -614,12 +898,14 @@ class Router
                     );
                 }
 
-                return [
-                    'name' => $resource,
-                    'type' => 'collection',
-                    'where' => $where,
-                    'route' => '/' . implode('/', $route),
-                ];
+                return new Resource(
+                    $resource,
+                    'collection',
+                    $resource_class,
+                    $where,
+                    '/' . implode('/', $route),
+                    $extension
+                );
             } else {
                 if ($model === null) {
                     $where = @array_combine(
@@ -668,12 +954,14 @@ class Router
                 }
 
                 if ($is_last) {
-                    return [
-                        'name' => $resource,
-                        'type' => 'resource',
-                        'where' => $where,
-                        'route' => '/' . implode('/', $route),
-                    ];
+                    return new Resource(
+                        $resource,
+                        'resource',
+                        $resource_class,
+                        $where,
+                        '/' . implode('/', $route),
+                        $extension
+                    );
                 }
             }
             $previous = $resource;
@@ -752,6 +1040,7 @@ class Router
             case static::ERROR_INVALID_RESOURCE_OFFSET:
             case static::ERROR_INVALID_RESOURCE_FOREIGN:
             case static::ERROR_INVALID_PAYLOAD:
+            case static::ERROR_NOT_ACCEPTABLE:
             case static::ERROR_INVALID_QUERY_PARAMETER:
             case static::ERROR_UNKNOWN_FIELDS:
                 $status = HttpResponse::HTTP_BAD_REQUEST;
