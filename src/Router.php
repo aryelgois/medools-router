@@ -32,14 +32,14 @@ class Router
      * @const string[]
      */
     const CONFIGURABLE = [
-        'always_expand' => 'boolean',
-        'default_content_type' => 'array',
-        'extensions' => 'array',
-        'implemented_methods' => 'array',
-        'meta' => 'array',
-        'per_page' => 'integer',
+        'always_expand'         => 'boolean',
+        'default_content_type'  => 'array',
+        'extensions'            => 'array',
+        'implemented_methods'   => 'array',
+        'meta'                  => 'array',
+        'per_page'              => 'integer',
         'primary_key_separator' => 'string',
-        'zlib_compression' => 'boolean',
+        'zlib_compression'      => 'boolean',
     ];
 
     /**
