@@ -274,7 +274,7 @@ class Router
 
             $resource_accept = $this->extensions[$resource->extension] ?? null;
             if ($resource_accept !== null) {
-                $resource_types = $this->computeResourceTypes($resource);
+                $resource_types = $this->computeResourceTypes($resource->name);
                 if (!array_key_exists($resource_accept, $resource_types)) {
                     $message = "Resource '$resource->name' can not generate "
                         . "content for '$resource->extension' extension";
@@ -300,7 +300,7 @@ class Router
             }
 
             $type = (in_array($this->method, ['GET', 'HEAD']))
-                ? $this->parseAccept($resource, $resource_accept ?? $accept)
+                ? $this->parseAccept($resource->name, $resource_accept ?? $accept)
                 : null;
             if ($this->method !== 'OPTIONS') {
                 $response = ($resource->type === 'collection')
@@ -424,7 +424,7 @@ class Router
         $collection = $resource->model_class::dump($where, $fields);
 
         if ($safe_method && $type !== null) {
-            $resource_types = $this->computeResourceTypes($resource);
+            $resource_types = $this->computeResourceTypes($resource->name);
             $action = $resource_types[$type]['action'];
             if (is_array($action)) {
                 $action = $action[$resource->type] ?? null;
@@ -493,7 +493,7 @@ class Router
         $fields = $this->parseFields($resource, $query['fields'] ?? '');
 
         if ($safe_method && $type !== null) {
-            $resource_types = $this->computeResourceTypes($resource);
+            $resource_types = $this->computeResourceTypes($resource->name);
             $action = $resource_types[$type]['action'];
             if (is_array($action)) {
                 $action = $action[$resource->type] ?? null;
@@ -612,32 +612,32 @@ class Router
      * NOTE:
      * - It caches results
      *
-     * @param Resource $resource Resource
+     * @param string $resource Resource name
      *
      * @return array[]
      */
-    protected function computeResourceTypes(Resource $resource)
+    protected function computeResourceTypes(string $resource)
     {
-        $cached = $this->cache['resource_types'][$resource->name] ?? null;
+        $cached = $this->cache['resource_types'][$resource] ?? null;
         if ($cached !== null) {
             return $cached;
         }
 
         $resource_types = array_replace_recursive(
             $this->default_content_type,
-            $this->resources[$resource->name]['content_type'] ?? []
+            $this->resources[$resource]['content_type'] ?? []
         );
         foreach ($resource_types as $resource_type => &$data) {
             if (!is_array($data) || !array_key_exists('action', $data)) {
                 $message = "Content-Type '$resource_type' for resource "
-                    . "'$resource->name' is invalid";
+                    . "'$resource' is invalid";
                 $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
             }
             $data['priority'] = $data['priority'] ?? 1;
         }
         unset($data);
 
-        $this->cache['resource_types'][$resource->name] = $resource_types;
+        $this->cache['resource_types'][$resource] = $resource_types;
         return $resource_types;
     }
 
@@ -729,12 +729,12 @@ class Router
      *   first $resource's content type with highest priority. It is better to
      *   return something the user doesn't complain about than a useless error
      *
-     * @param Resource $resource Resource
-     * @param string   $accept   Request Accept
+     * @param string $resource Resource name
+     * @param string $accept   Request Accept
      *
      * @return string
      */
-    protected function parseAccept(Resource $resource, string $accept)
+    protected function parseAccept(string $resource, string $accept)
     {
         $available_types = [];
         $resource_types = $this->computeResourceTypes($resource);
@@ -778,13 +778,13 @@ class Router
             if ($result === null) {
                 $this->sendError(
                     static::ERROR_INTERNAL_SERVER,
-                    "Resource '$resource->name' has invalid Content-Type"
+                    "Resource '$resource' has invalid Content-Type"
                 );
             }
         } else {
             $result = static::firstHigher($list);
             if ($result === null) {
-                $message = "Resource '$resource->name' can not generate content"
+                $message = "Resource '$resource' can not generate content"
                     . ' complying to Accept header';
                 $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
             }
