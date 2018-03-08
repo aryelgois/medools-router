@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Classes:
   - Router
   - Resource
+  - Response
 - [Medools][aryelgois/medools] config file
 - Platform requirement: `ext-zlib`
 
