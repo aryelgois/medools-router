@@ -660,6 +660,8 @@ class Router
     /**
      * Enables zlib if request method is not HEAD and response can have body
      *
+     * @deprecated Response class already does this
+     *
      * @param int $code HTTP status code
      */
     protected function enableZlib(int $status)
