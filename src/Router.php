@@ -261,7 +261,7 @@ class Router
             $this->sendError(static::ERROR_METHOD_NOT_IMPLEMENTED, $message);
         }
 
-        $resource = $this->processRoute($uri);
+        $resource = $this->parseRoute($uri);
         $response = null;
 
         parse_str(parse_url($uri, PHP_URL_QUERY), $query);
@@ -851,13 +851,15 @@ class Router
     /**
      * Tells what is requested in a URI
      *
-     * @param string $uri Route to be processed
+     * @param string $uri Route to be parsed
      *
-     * @return Resource On success
-     * @return null     On failure
+     * @return mixed[] On success
+     * @return null    On failure
      */
-    protected function processRoute(string $uri)
+    protected function parseRoute(string $uri)
     {
+        $result = [];
+
         $route = trim(urldecode(parse_url($uri, PHP_URL_PATH)), '/');
         if ($route === '') {
             return;
@@ -871,6 +873,8 @@ class Router
                 $extension = null;
             }
         }
+        $result['extension'] = $extension;
+        $result['route'] = "/$route";
         $route = explode('/', $route);
 
         $model = $previous = null;
@@ -889,7 +893,6 @@ class Router
             $id = $route[$i + 1] ?? null;
             $is_last = ($route[$i + 2] ?? null) === null;
             if ($id === null) {
-
                 $where = ($model !== null)
                     ? static::reverseForeignKey($resource_class, $model)
                     : [];
@@ -902,13 +905,14 @@ class Router
                     );
                 }
 
-                return new Resource(
-                    $resource,
-                    'collection',
-                    $resource_class,
-                    $where,
-                    '/' . implode('/', $route),
-                    $extension
+                return array_merge(
+                    $result,
+                    [
+                        'name' => $resource,
+                        'type' => 'collection',
+                        'model_class' => $resource_class,
+                        'where' => $where,
+                    ]
                 );
             } else {
                 if ($model === null) {
@@ -958,13 +962,14 @@ class Router
                 }
 
                 if ($is_last) {
-                    return new Resource(
-                        $resource,
-                        'resource',
-                        $resource_class,
-                        $where,
-                        '/' . implode('/', $route),
-                        $extension
+                    return array_merge(
+                        $result,
+                        [
+                            'name' => $resource,
+                            'type' => 'resource',
+                            'model_class' => $resource_class,
+                            'where' => $where,
+                        ]
                     );
                 }
             }
