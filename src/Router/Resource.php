@@ -7,6 +7,8 @@
 
 namespace aryelgois\Medools\Router;
 
+use aryelgois\Utils;
+
 /**
  * Holds data processed from a route
  *
@@ -14,99 +16,27 @@ namespace aryelgois\Medools\Router;
  * @license MIT
  * @link https://www.github.com/aryelgois/medools-router
  */
-class Resource
+class Resource extends Utils\ReadOnly
 {
-    /**
-     * Key for Router->resources
-     *
-     * @var string
-     */
-    protected $name;
+    const KEYS = [
+        'name'         => 'string', // Key for Router->resources
+        'type'         => 'string', // 'resource' or 'collection'
+        'model_class'  => 'string', // Fully Qualified Class for a Medools Model
+        'where'        => 'array',  // For loading or dumping model_class
+        'route'        => 'string', // Normalized and cleared route
+        'extension'    => 'string', // Known extension
+        'query'        => 'array',  // Parsed query
+        'data'         => 'array',  // Parsed Content Body
+        'content_type' => 'string', // Which content type should be produced,
+                                    // null means internal content type
+    ];
 
-    /**
-     * 'resource' or 'collection'
-     *
-     * @var string
-     */
-    protected $type;
-
-    /**
-     * Fully Qualified Class name for a Medools Model
-     *
-     * @var string
-     */
-    protected $model_class;
-
-    /**
-     * For loading or dumping Model
-     *
-     * @var array
-     */
-    protected $where;
-
-    /**
-     * Normalized and cleared route
-     *
-     * @var string
-     */
-    protected $route;
-
-    /**
-     * Known extension or null
-     *
-     * @var string
-     */
-    protected $extension;
-
-    /**
-     * Creates a new Resource object
-     *
-     * @param string $name      Key for Router->resources
-     * @param string $type      'resource' or 'collection'
-     * @param string $model     Fully Qualified Class name for a Medools Model
-     * @param array  $where     For loading or dumping Model
-     * @param string $route     Normalized and cleared route
-     * @param string $extension Known extension or null
-     */
-    public function __construct(
-        string $name,
-        string $type,
-        string $model_class,
-        array $where,
-        string $route,
-        string $extension = null
-    ) {
-        $this->name = $name;
-        $this->type = $type;
-        $this->model_class = $model_class;
-        $this->where = $where;
-        $this->route = $route;
-        $this->extension = $extension;
-    }
-
-    /**
-     * Retireves stored data
-     *
-     * @param string $property A valid property
-     *
-     * @return mixed
-     *
-     * @throws \DomainException If $property is invalid
-     */
-    public function __get($property)
-    {
-        if (property_exists($this, $property)) {
-            return $this->{$property};
-        } else {
-            $message = "Resource does not have '$property' property";
-            throw new \DomainException($message);
-        }
-    }
+    const OPTIONAL = ['extension', 'content_type'];
 
     /**
      * Returns a list of model ids
      *
-     * @return array
+     * @return array[]
      */
     public function getList()
     {
