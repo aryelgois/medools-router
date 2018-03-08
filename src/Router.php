@@ -242,8 +242,7 @@ class Router
      * @param string $type   Request Content-Type
      * @param string $body   Request body
      *
-     * @throws \Exception If some data has already been output
-     *                    @see Utils::checkOutput()
+     * @return Response
      */
     public function run(
         string $method,
@@ -255,34 +254,33 @@ class Router
         $this->method = strtoupper($method);
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
-            header('Allow: ' . implode(',', $allow));
             $message = "Method '$this->method' is not implemented. "
                 . 'Please use: ' . implode(', ', $allow);
-            $this->sendError(static::ERROR_METHOD_NOT_IMPLEMENTED, $message);
+            $this->sendError(
+                static::ERROR_METHOD_NOT_IMPLEMENTED,
+                $message,
+                $allow
+            );
         }
+        $safe_method = in_array($this->method, ['GET', 'HEAD']);
 
         $resource = $this->parseRoute($uri);
         $response = null;
-
-        parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-        $data = $this->parseBody($content_type, $body);
 
         if ($resource === null) {
             if ($this->method !== 'OPTIONS') {
                 $response = $this->requestRoot();
             }
         } else {
-            $resource_data = $this->resources[$resource->name];
+            $resource_name = $resource['name'];
+            $resource_extension = $resource['extension'];
+            $resource_data = $this->resources[$resource_name];
+            $resource_accept = $this->extensions[$resource_extension] ?? null;
 
-            $resource_accept = $this->extensions[$resource->extension] ?? null;
-            if ($resource_accept !== null) {
-                $resource_types = $this->computeResourceTypes($resource->name);
-                if (!array_key_exists($resource_accept, $resource_types)) {
-                    $message = "Resource '$resource->name' can not generate "
-                        . "content for '$resource->extension' extension";
-                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
-                }
-            }
+            parse_str(parse_url($uri, PHP_URL_QUERY), $query);
+            $data = $this->parseBody($content_type, $body);
+            $resource['query'] = $query;
+            $resource['data'] = $data;
 
             $methods = (array) ($resource_data['methods'] ?? null);
             if (!empty($methods)) {
@@ -291,43 +289,46 @@ class Router
                     array_merge($methods, ['OPTIONS'])
                 );
                 if (!in_array($this->method, $allow)) {
-                    header('Allow: ' . implode(',', $allow));
                     $message = "Method '$this->method' is not allowed. "
                         . 'Please use: ' . implode(', ', $allow);
                     $this->sendError(
                         static::ERROR_METHOD_NOT_ALLOWED,
-                        $message
+                        $message,
+                        $allow
                     );
                 }
             }
 
-            $type = (in_array($this->method, ['GET', 'HEAD']))
-                ? $this->parseAccept($resource->name, $resource_accept ?? $accept)
-                : null;
+            if ($safe_method && $resource_accept !== null) {
+                $resource_types = $this->computeResourceTypes($resource_name);
+                if (!array_key_exists($resource_accept, $resource_types)) {
+                    $message = "Resource '$resource_name' can not generate "
+                        . "content for '$resource_extension' extension";
+                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                }
+                $resource['content_type'] = $this->parseAccept(
+                    $resource_name,
+                    $resource_accept ?? $accept
+                );
+            }
+
+            $resource = new Resource($resource);
+
             if ($this->method !== 'OPTIONS') {
                 $response = ($resource->type === 'collection')
-                    ? $this->requestCollection($resource, $query, $data, $type)
-                    : $this->requestResource($resource, $query, $data, $type);
+                    ? $this->requestCollection($resource)
+                    : $this->requestResource($resource);
             }
         }
 
-        if ($this->method === 'OPTIONS') {
-            header('Allow: ' . implode(',', $allow));
+        if ($response === null) {
+            $response = $this->prepareResponse();
+            if ($this->method === 'OPTIONS') {
+                $response->headers['Allow'] = $allow;
+            }
         }
 
-        if ($this->method === 'HEAD') {
-            Utils::checkOutput();
-        } else {
-            Utils::checkOutput('JSON');
-        }
-
-        if (empty($response)) {
-            header(HttpResponse::getHeader(HttpResponse::HTTP_NO_CONTENT));
-        } elseif ($this->method !== 'HEAD') {
-            $this->enableZlib(HttpResponse::HTTP_OK);
-            header('Content-type: application/json');
-            echo json_encode($response, JSON_PRETTY_PRINT);
-        }
+        return $response;
     }
 
     /**
@@ -1050,6 +1051,7 @@ class Router
 
             case static::ERROR_METHOD_NOT_IMPLEMENTED:
                 $status = HttpResponse::HTTP_NOT_IMPLEMENTED;
+                $response->headers['Allow'] = $data;
                 break;
 
             case static::ERROR_INVALID_RESOURCE:
@@ -1073,6 +1075,9 @@ class Router
 
             case static::ERROR_METHOD_NOT_ALLOWED:
                 $status = HttpResponse::HTTP_METHOD_NOT_ALLOWED;
+                if ($data !== null) {
+                    $response->headers['Allow'] = $data;
+                }
                 break;
 
             default:
