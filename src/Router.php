@@ -9,6 +9,7 @@ namespace aryelgois\Medools;
 
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
+use aryelgois\Medools\Router\RouteException;
 use aryelgois\Medools\Router\Resource;
 use aryelgois\Medools\Router\Response;
 use aryelgois\Medools\Exceptions\UnknownColumnException;
@@ -1028,19 +1029,14 @@ class Router
      * @param string $message Error message
      * @param mixed  $data    Additional data used by some error codes
      *
-     * @throws \Exception If some data has already been output
-     *                    @see Utils::checkOutput()
+     * @throws RouteException With error Response
      */
     protected function sendError(
         int $code,
         string $message,
         $data = null
     ) {
-        if ($this->method === 'HEAD') {
-            Utils::checkOutput();
-        } else {
-            Utils::checkOutput('JSON');
-        }
+        $response = $this->prepareResponse();
 
         switch ($code) {
             case static::ERROR_INTERNAL_SERVER:
@@ -1080,18 +1076,14 @@ class Router
                     . (strlen($message) > 0 ? ': ' . $message : '');
                 break;
         }
+        $response->status = $status;
 
-        $response = [
+        $response->headers['Content-Type'] = 'application/json';
+        $response->body = [
             'code' => $code,
             'message' => $message,
         ];
 
-        $this->enableZlib($status);
-        header(HttpResponse::getHeader($status));
-        if ($this->method !== 'HEAD') {
-            header('Content-type: application/json');
-            echo json_encode($response, JSON_PRETTY_PRINT);
-        }
-        die;
+        throw new RouteException($response);
     }
 }
