@@ -351,7 +351,7 @@ class Router
         $resource_data = $this->resources[$resource->name];
         $where = $resource->where;
 
-        $fields = $this->parseFields($resource, $query['fields'] ?? '');
+        $fields = $this->parseFields($resource);
 
         $sort = $query['sort'] ?? '';
         if ($sort !== '') {
@@ -493,7 +493,7 @@ class Router
         $resource_class = $resource->model_class;
         $model = $resource_class::getInstance($resource->where);
 
-        $fields = $this->parseFields($resource, $query['fields'] ?? '');
+        $fields = $this->parseFields($resource);
 
         if ($safe_method && $type !== null) {
             $resource_types = $this->computeResourceTypes($resource->name);
@@ -818,17 +818,19 @@ class Router
      * Parses fields query and validate against a resource
      *
      * @param Resource $resource Resource
-     * @param string   $fields   Fields query parameter
      *
      * @return string[]
      */
-    protected function parseFields(Resource $resource, string $fields)
+    protected function parseFields(Resource $resource)
     {
         $result = [];
+
+        $fields = $resource->query['fields'] ?? '';
         if ($fields !== '') {
             $result = explode(',', $fields);
             $this->checkUnknownField($resource, $result);
         }
+
         return $result;
     }
 
