@@ -10,6 +10,7 @@ namespace aryelgois\Medools;
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Router\Resource;
+use aryelgois\Medools\Router\Response;
 use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
@@ -966,6 +967,19 @@ class Router
             }
             $previous = $resource;
         }
+    }
+
+    /**
+     * Creates a new Response object with some properties filled
+     *
+     * @return Response
+     */
+    protected function prepareResponse()
+    {
+        $response = new Response();
+        $response->request_method = $this->method;
+        $response->zlib_compression = $this->zlib_compression;
+        return $response;
     }
 
     /**
