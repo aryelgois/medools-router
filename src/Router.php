@@ -588,125 +588,9 @@ class Router
     }
 
     /*
-     * Internal methods
+     * Parsers
      * =========================================================================
      */
-
-    /**
-     * Checks if a resource has all fields passed
-     *
-     * @param Resource $resource Resource
-     * @param string[] $fields   List of fields to test
-     */
-    protected function checkUnknownField(Resource $resource, array $fields)
-    {
-        try {
-            $resource->model_class::checkUnknownColumn($fields);
-        } catch (UnknownColumnException $e) {
-            $message = "Resource '$resource->name' "
-                . explode(' ', $e->getMessage(), 2)[1];
-            $this->sendError(static::ERROR_UNKNOWN_FIELDS, $message);
-        }
-    }
-
-    /**
-     * Computes Resource Content Types
-     *
-     * NOTE:
-     * - It caches results
-     *
-     * @param string $resource Resource name
-     *
-     * @return array[]
-     */
-    protected function computeResourceTypes(string $resource)
-    {
-        $cached = $this->cache['resource_types'][$resource] ?? null;
-        if ($cached !== null) {
-            return $cached;
-        }
-
-        $resource_types = array_replace_recursive(
-            $this->default_content_type,
-            $this->resources[$resource]['content_type'] ?? []
-        );
-        foreach ($resource_types as $resource_type => &$data) {
-            if (!is_array($data) || !array_key_exists('action', $data)) {
-                $message = "Content-Type '$resource_type' for resource "
-                    . "'$resource' is invalid";
-                $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
-            }
-            $data['priority'] = $data['priority'] ?? 1;
-        }
-        unset($data);
-
-        $this->cache['resource_types'][$resource] = $resource_types;
-        return $resource_types;
-    }
-
-    /**
-     * Counts rows in Resource's table
-     *
-     * @param string  $resource Resource name
-     * @param mixed[] $where    \Medoo\Medoo $where clause
-     *
-     * @return integer
-     */
-    protected function countResource(string $resource, array $where = null)
-    {
-        $model = $this->resources[$resource]['model'];
-        $database = $model::getDatabase();
-        return $database->count($model::TABLE, $where ?? []);
-    }
-
-    /**
-     * Returns key for first highest value
-     *
-     * @param float[] $list List of numbers between min and max
-     * @param float   $min  Min value to test
-     * @param float   $max  Max value to test
-     *
-     * @return string
-     * @return null   If no value was higher than $min
-     */
-    protected static function firstHigher(
-        array $list,
-        float $min = null,
-        float $max = null
-    ) {
-        $min = $min ?? 0;
-        $max = $max ?? 1;
-
-        $result = null;
-        $higher = $min;
-        foreach ($list as $key => $value) {
-            $value = Utils::numberLimit($value, $min, $max);
-            if ($value == $max) {
-                return $key;
-            } elseif ($value > $higher) {
-                $result = $key;
-                $higher = $value;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Generates and send Link header
-     *
-     * @param string[] $routes List of routes
-     */
-    protected function headerLink(array $routes)
-    {
-        $links = [];
-        foreach ($routes as $rel => $route) {
-            $links[] = '<' . $this->url . $route . '>; rel="' . $rel . '"';
-        }
-        if (!empty($links)) {
-            header('Link: ' . implode(', ', $links));
-        }
-    }
 
     /**
      * Parses Request Accept
@@ -960,6 +844,127 @@ class Router
                 }
             }
             $previous = $resource;
+        }
+    }
+
+    /*
+     * Internal methods
+     * =========================================================================
+     */
+
+    /**
+     * Checks if a resource has all fields passed
+     *
+     * @param Resource $resource Resource
+     * @param string[] $fields   List of fields to test
+     */
+    protected function checkUnknownField(Resource $resource, array $fields)
+    {
+        try {
+            $resource->model_class::checkUnknownColumn($fields);
+        } catch (UnknownColumnException $e) {
+            $message = "Resource '$resource->name' "
+                . explode(' ', $e->getMessage(), 2)[1];
+            $this->sendError(static::ERROR_UNKNOWN_FIELDS, $message);
+        }
+    }
+
+    /**
+     * Computes Resource Content Types
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param string $resource Resource name
+     *
+     * @return array[]
+     */
+    protected function computeResourceTypes(string $resource)
+    {
+        $cached = $this->cache['resource_types'][$resource] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $resource_types = array_replace_recursive(
+            $this->default_content_type,
+            $this->resources[$resource]['content_type'] ?? []
+        );
+        foreach ($resource_types as $resource_type => &$data) {
+            if (!is_array($data) || !array_key_exists('action', $data)) {
+                $message = "Content-Type '$resource_type' for resource "
+                    . "'$resource' is invalid";
+                $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
+            }
+            $data['priority'] = $data['priority'] ?? 1;
+        }
+        unset($data);
+
+        $this->cache['resource_types'][$resource] = $resource_types;
+        return $resource_types;
+    }
+
+    /**
+     * Counts rows in Resource's table
+     *
+     * @param string  $resource Resource name
+     * @param mixed[] $where    \Medoo\Medoo $where clause
+     *
+     * @return integer
+     */
+    protected function countResource(string $resource, array $where = null)
+    {
+        $model = $this->resources[$resource]['model'];
+        $database = $model::getDatabase();
+        return $database->count($model::TABLE, $where ?? []);
+    }
+
+    /**
+     * Returns key for first highest value
+     *
+     * @param float[] $list List of numbers between min and max
+     * @param float   $min  Min value to test
+     * @param float   $max  Max value to test
+     *
+     * @return string
+     * @return null   If no value was higher than $min
+     */
+    protected static function firstHigher(
+        array $list,
+        float $min = null,
+        float $max = null
+    ) {
+        $min = $min ?? 0;
+        $max = $max ?? 1;
+
+        $result = null;
+        $higher = $min;
+        foreach ($list as $key => $value) {
+            $value = Utils::numberLimit($value, $min, $max);
+            if ($value == $max) {
+                return $key;
+            } elseif ($value > $higher) {
+                $result = $key;
+                $higher = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Generates and send Link header
+     *
+     * @param string[] $routes List of routes
+     */
+    protected function headerLink(array $routes)
+    {
+        $links = [];
+        foreach ($routes as $rel => $route) {
+            $links[] = '<' . $this->url . $route . '>; rel="' . $rel . '"';
+        }
+        if (!empty($links)) {
+            header('Link: ' . implode(', ', $links));
         }
     }
 
