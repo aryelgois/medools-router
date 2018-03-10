@@ -12,7 +12,6 @@ use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Router\RouteException;
 use aryelgois\Medools\Router\Resource;
 use aryelgois\Medools\Router\Response;
-use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
  * A Router class to bootstrap RESTful APIs based on aryelgois/medools
@@ -859,16 +858,15 @@ class Router
     /**
      * Checks if a resource has all fields passed
      *
+     * It sends an error Response on failure
+     *
      * @param Resource $resource Resource
      * @param string[] $fields   List of fields to test
      */
     protected function checkUnknownField(Resource $resource, array $fields)
     {
-        try {
-            $resource->model_class::checkUnknownColumn($fields);
-        } catch (UnknownColumnException $e) {
-            $message = "Resource '$resource->name' "
-                . explode(' ', $e->getMessage(), 2)[1];
+        $message = $resource->hasFields($fields);
+        if ($message !== true) {
             $this->sendError(static::ERROR_UNKNOWN_FIELDS, $message);
         }
     }

@@ -8,6 +8,7 @@
 namespace aryelgois\Medools\Router;
 
 use aryelgois\Utils;
+use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
  * Holds data processed from a route
@@ -32,6 +33,25 @@ class Resource extends Utils\ReadOnly
     ];
 
     const OPTIONAL = ['extension', 'content_type'];
+
+    /**
+     * Checks if Resource has all fields passed
+     *
+     * @param string[] $fields List of fields to test
+     *
+     * @return true   On success
+     * @return string On failure, with error message
+     */
+    public function hasFields(array $fields)
+    {
+        try {
+            $this->model_class::checkUnknownColumn($fields);
+        } catch (UnknownColumnException $e) {
+            return "Resource '$this->name' "
+                . explode(' ', $e->getMessage(), 2)[1];
+        }
+        return true;
+    }
 
     /**
      * Returns a list of model ids
