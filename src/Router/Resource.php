@@ -20,7 +20,7 @@ class Resource extends Utils\ReadOnly
 {
     const KEYS = [
         'name'         => 'string', // Key for Router->resources
-        'type'         => 'string', // 'resource' or 'collection'
+        'kind'         => 'string', // 'resource' or 'collection'
         'model_class'  => 'string', // Fully Qualified Class for a Medools Model
         'where'        => 'array',  // For loading or dumping model_class
         'route'        => 'string', // Normalized and cleared route
@@ -40,7 +40,7 @@ class Resource extends Utils\ReadOnly
      */
     public function getList()
     {
-        if ($this->type === 'collection') {
+        if ($this->kind === 'collection') {
             $model_class = $this->model_class;
             return $model_class::dump($this->where, $model_class::PRIMARY_KEY);
         }

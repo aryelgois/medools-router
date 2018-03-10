@@ -315,7 +315,7 @@ class Router
             $resource = new Resource($resource);
 
             if ($this->method !== 'OPTIONS') {
-                $response = ($resource->type === 'collection')
+                $response = ($resource->kind === 'collection')
                     ? $this->requestCollection($resource)
                     : $this->requestResource($resource);
             }
@@ -430,7 +430,7 @@ class Router
             $resource_types = $this->computeResourceTypes($resource->name);
             $action = $resource_types[$type]['action'];
             if (is_array($action)) {
-                $action = $action[$resource->type] ?? null;
+                $action = $action[$resource->kind] ?? null;
                 if ($action === null) {
                     header_remove("Link");
                     header_remove("X-Total-Count");
@@ -499,7 +499,7 @@ class Router
             $resource_types = $this->computeResourceTypes($resource->name);
             $action = $resource_types[$type]['action'];
             if (is_array($action)) {
-                $action = $action[$resource->type] ?? null;
+                $action = $action[$resource->kind] ?? null;
                 if ($action === null) {
                     return;
                 }
@@ -779,7 +779,7 @@ class Router
                     $result,
                     [
                         'name' => $resource,
-                        'type' => 'collection',
+                        'kind' => 'collection',
                         'model_class' => $resource_class,
                         'where' => $where,
                     ]
@@ -836,7 +836,7 @@ class Router
                         $result,
                         [
                             'name' => $resource,
-                            'type' => 'resource',
+                            'kind' => 'resource',
                             'model_class' => $resource_class,
                             'where' => $where,
                         ]
