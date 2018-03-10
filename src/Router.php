@@ -570,7 +570,7 @@ class Router
     /**
      * When requested route is '/'
      *
-     * @return array With $this->meta and a row count for each resource
+     * @return Response With $this->meta and a row count for each resource
      */
     protected function requestRoot()
     {
@@ -579,12 +579,16 @@ class Router
             $count[$resource] = $this->countResource($resource);
         }
 
-        return array_merge(
+        $response = $this->prepareResponse();
+        $response->headers['Content-Type'] = 'application/json';
+        $response->body = array_merge(
             $this->meta,
             [
                 'resources' => $count,
             ]
         );
+
+        return $response;
     }
 
     /*
