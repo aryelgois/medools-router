@@ -704,21 +704,19 @@ class Router
     /**
      * Parses fields query and validate against a resource
      *
+     * It sends an error Response on failure
+     *
      * @param Resource $resource Resource
      *
      * @return string[]
      */
     protected function parseFields(Resource $resource)
     {
-        $result = [];
-
-        $fields = $resource->query['fields'] ?? '';
-        if ($fields !== '') {
-            $result = explode(',', $fields);
-            $this->checkUnknownField($resource, $result);
+        $fields = $resource->getFields();
+        if (!is_array($fields)) {
+            $this->sendError(static::ERROR_UNKNOWN_FIELDS, $fields);
         }
-
-        return $result;
+        return $fields;
     }
 
     /**

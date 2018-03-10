@@ -35,6 +35,26 @@ class Resource extends Utils\ReadOnly
     const OPTIONAL = ['extension', 'content_type'];
 
     /**
+     * Returns quered fields or all fields
+     *
+     * @return string[] On success
+     * @return string   On failure, with error message
+     */
+    public function getFields()
+    {
+        $query_fields = $this->query['fields'] ?? '';
+        if ($query_fields !== '') {
+            $fields = explode(',', $query_fields);
+            $message = $this->hasFields($fields);
+            if ($message !== true) {
+                return $message;
+            }
+            return $fields;
+        }
+        return $this->model_class::COLUMNS;
+    }
+
+    /**
      * Checks if Resource has all fields passed
      *
      * @param string[] $fields List of fields to test
