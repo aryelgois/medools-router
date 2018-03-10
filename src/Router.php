@@ -248,7 +248,7 @@ class Router
         string $method,
         string $uri,
         string $accept,
-        string $content_type,
+        string $type,
         string $body
     ) {
         $this->method = strtoupper($method);
@@ -278,7 +278,7 @@ class Router
             $resource_accept = $this->extensions[$resource_extension] ?? null;
 
             parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-            $data = $this->parseBody($content_type, $body);
+            $data = $this->parseBody($type, $body);
             $resource['query'] = $query;
             $resource['data'] = $data;
 
