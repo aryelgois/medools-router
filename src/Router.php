@@ -298,9 +298,11 @@ class Router
                 }
             }
 
-            if ($safe_method && $resource_accept !== null) {
+            if ($safe_method) {
                 $resource_types = $this->computeResourceTypes($resource_name);
-                if (!array_key_exists($resource_accept, $resource_types)) {
+                if ($resource_accept !== null
+                    && !array_key_exists($resource_accept, $resource_types)
+                ) {
                     $message = "Resource '$resource_name' can not generate "
                         . "content for '$resource_extension' extension";
                     $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
