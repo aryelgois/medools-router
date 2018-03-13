@@ -57,7 +57,7 @@ class Router
      */
     protected $default_content_type = [
         'application/json' => [
-            'action' => null,
+            'handler' => null,
             'priority' => 1,
         ],
     ];
@@ -427,23 +427,23 @@ class Router
 
         if ($safe_method && $type !== null) {
             $resource_types = $this->computeResourceTypes($resource->name);
-            $action = $resource_types[$type]['action'];
-            if (is_array($action)) {
-                $action = $action[$resource->kind] ?? null;
-                if ($action === null) {
+            $handler = $resource_types[$type]['handler'];
+            if (is_array($handler)) {
+                $handler = $handler[$resource->kind] ?? null;
+                if ($handler === null) {
                     header_remove("Link");
                     header_remove("X-Total-Count");
                     return;
                 }
             }
-            if ($action !== null) {
+            if ($handler !== null) {
                 header_remove("Link");
                 header_remove("X-Total-Count");
-                if (is_callable($action)) {
-                    return $action($resource, $fields);
+                if (is_callable($handler)) {
+                    return $handler($resource, $fields);
                 } else {
                     $message = "Content-Type '$type' for collection of resource"
-                        . " '$resource->name' has invalid action";
+                        . " '$resource->name' has invalid handler";
                     $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
                 }
             }
@@ -496,19 +496,19 @@ class Router
 
         if ($safe_method && $type !== null) {
             $resource_types = $this->computeResourceTypes($resource->name);
-            $action = $resource_types[$type]['action'];
-            if (is_array($action)) {
-                $action = $action[$resource->kind] ?? null;
-                if ($action === null) {
+            $handler = $resource_types[$type]['handler'];
+            if (is_array($handler)) {
+                $handler = $handler[$resource->kind] ?? null;
+                if ($handler === null) {
                     return;
                 }
             }
-            if ($action !== null) {
-                if (is_callable($action)) {
-                    return $action($resource, $fields);
+            if ($handler !== null) {
+                if (is_callable($handler)) {
+                    return $handler($resource, $fields);
                 } else {
                     $message = "Content-Type '$type' for resource "
-                        . "'$resource->name' has invalid action";
+                        . "'$resource->name' has invalid handler";
                     $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
                 }
             }
@@ -891,7 +891,7 @@ class Router
             $this->resources[$resource]['content_type'] ?? []
         );
         foreach ($resource_types as $resource_type => &$data) {
-            if (!is_array($data) || !array_key_exists('action', $data)) {
+            if (!is_array($data) || !array_key_exists('handler', $data)) {
                 $message = "Content-Type '$resource_type' for resource "
                     . "'$resource' is invalid";
                 $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
