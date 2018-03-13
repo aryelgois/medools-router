@@ -967,9 +967,11 @@ class Router
     }
 
     /**
-     * Generates and send Link header
+     * Generates content for Link header
      *
      * @param string[] $routes List of routes
+     *
+     * @return string
      */
     protected function headerLink(array $routes)
     {
@@ -977,9 +979,7 @@ class Router
         foreach ($routes as $rel => $route) {
             $links[] = '<' . $this->url . $route . '>; rel="' . $rel . '"';
         }
-        if (!empty($links)) {
-            header('Link: ' . implode(', ', $links));
-        }
+        return implode(', ', $links);
     }
 
     /**
