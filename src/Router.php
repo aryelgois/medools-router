@@ -242,6 +242,7 @@ class Router
      * @param string $body   Request body
      *
      * @return Response
+     * @return null     If response was sent by external handler
      */
     public function run(
         string $method,
@@ -328,6 +329,10 @@ class Router
                 $response = ($resource->kind === 'collection')
                     ? $this->requestCollection($resource)
                     : $this->requestResource($resource);
+
+                if (headers_sent()) {
+                    return;
+                }
             }
         }
 
