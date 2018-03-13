@@ -902,7 +902,10 @@ class Router
             $this->resources[$resource]['content_type'] ?? []
         );
         foreach ($resource_types as $resource_type => &$data) {
-            if (!is_array($data) || !array_key_exists('handler', $data)) {
+            if (!is_array($data)) {
+                $data = ['handler' => $data];
+            }
+            if (!array_key_exists('handler', $data)) {
                 $message = "Content-Type '$resource_type' for resource "
                     . "'$resource' is invalid";
                 $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
