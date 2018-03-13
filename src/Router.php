@@ -485,49 +485,85 @@ class Router
     /**
      * When requested route points to a resource
      *
-     * @param Resource $resource From processed route
-     * @param array    $query    Parsed query
-     * @param array    $data     Parsed data
-     * @param string   $type     Parsed accept
+     * @param Resource $resource Processed route
      *
-     * @return array data for GET request
+     * @return Response
+     * @return null     If response was sent by external handler
      */
-    protected function requestResource(
-        Resource $resource,
-        array $query,
-        array $data,
-        string $type = null
-    ) {
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+    protected function requestResource(Resource $resource)
+    {
+        $response = $this->prepareResponse();
+
+        $resource_type = $resource->content_type;
         $resource_data = $this->resources[$resource->name];
         $resource_class = $resource->model_class;
         $model = $resource_class::getInstance($resource->where);
 
         $fields = $this->parseFields($resource);
 
-        if ($safe_method && $type !== null) {
-            $resource_types = $this->computeResourceTypes($resource->name);
-            $handler = $resource_types[$type]['handler'];
-            if (is_array($handler)) {
-                $handler = $handler[$resource->kind] ?? null;
-                if ($handler === null) {
-                    return;
-                }
-            }
-            if ($handler !== null) {
-                if (is_callable($handler)) {
-                    return $handler($resource, $fields);
-                } else {
-                    $message = "Content-Type '$type' for resource "
-                        . "'$resource->name' has invalid handler";
-                    $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
-                }
-            }
-        }
-
+        $body = null;
         switch ($this->method) {
+            case 'GET':
+            case 'HEAD':
+                if ($resource_type !== null) {
+                    $resource_types = $this->computeResourceTypes(
+                        $resource->name
+                    );
+                    $handler = $resource_types[$resource_type]['handler'];
+                    if (is_array($handler)) {
+                        $handler = $handler[$resource->kind];
+                    }
+                    if ($handler !== null) {
+                        if (is_callable($handler)) {
+                            if ($this->method === 'HEAD') {
+                                ob_start();
+                                $handler($resource);
+                                ob_end_clean();
+                            } else {
+                                $handler($resource);
+                            }
+                            return;
+                        } else {
+                            $message = "Resource '$resource->name' has invalid "
+                                . "$resource_type handler";
+                            $this->sendError(
+                                static::ERROR_INTERNAL_SERVER,
+                                $message
+                            );
+                        }
+                    }
+                }
+
+                $expand = $resource->query['expand'] ?? null;
+                if ($expand === 'false'
+                    || !$this->always_expand && $expand === null
+                ) {
+                    $body = $model->getData();
+
+                    $routes = [];
+                    foreach ($resource_class::FOREIGN_KEYS as $column => $fk) {
+                        foreach ($this->resources as $res_name => $res_data) {
+                            if ($res_data['model'] === $fk[0]) {
+                                $foreign = $model->{$column};
+                                if ($foreign !== null) {
+                                    $routes[$column] = "/$res_name/" . implode(
+                                        $this->primary_key_separator,
+                                        $foreign->getPrimaryKey()
+                                    );
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    $response->headers['Link'] = $this->headerLink($routes);
+                } else {
+                    $body = $model->toArray();
+                }
+
+                $body = Utils::arrayWhitelist($body, $fields);
+                break;
+
             case 'DELETE':
-                return;
                 break;
 
             case 'PATCH':
@@ -544,37 +580,12 @@ class Router
                 break;
         }
 
-        $expand = $query['expand'] ?? null;
-        if ($expand === 'false' || !$this->always_expand && $expand === null) {
-            $result = $model->getData();
-
-            if ($safe_method) {
-                $routes = [];
-                foreach ($resource_class::FOREIGN_KEYS as $column => $fk) {
-                    foreach ($this->resources as $res_name => $res_data) {
-                        if ($res_data['model'] === $fk[0]) {
-                            $foreign = $model->{$column};
-                            if ($foreign !== null) {
-                                $routes[$column] = "/$res_name/" . implode(
-                                    $this->primary_key_separator,
-                                    $foreign->getPrimaryKey()
-                                );
-                            }
-                            break;
-                        }
-                    }
-                }
-                $this->headerLink($routes);
-            }
-        } else {
-            $result = $model->toArray();
+        if ($body !== null) {
+            $response->headers['Content-Type'] = 'application/json';
+            $response->body = $body;
         }
 
-        if (!empty($fields)) {
-            $result = Utils::arrayWhitelist($result, $fields);
-        }
-
-        return $result;
+        return $response;
     }
 
     /**
