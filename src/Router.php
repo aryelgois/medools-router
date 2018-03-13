@@ -307,10 +307,19 @@ class Router
                         . "content for '$resource_extension' extension";
                     $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
                 }
-                $resource['content_type'] = $this->parseAccept(
+                $resource['content_type'] = $accepted = $this->parseAccept(
                     $resource_name,
                     $resource_accept ?? $accept
                 );
+
+                $handlers = $resource_types[$accepted]['handler'];
+                if (is_array($handlers)
+                    && ($handlers[$resource['kind']] ?? null) === null
+                ) {
+                    $message = "Resource '$resource_name' can not generate "
+                        . $resource['content_type'] . ' ' . $resource['kind'];
+                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                }
             }
 
             $resource = new Resource($resource);
