@@ -308,6 +308,7 @@ class Router
                         . "content for '$resource_extension' extension";
                     $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
                 }
+
                 $resource['content_type'] = $accepted = $this->parseAccept(
                     $resource_name,
                     $resource_accept ?? $accept
@@ -323,9 +324,8 @@ class Router
                 }
             }
 
-            $resource = new Resource($resource);
-
             if ($this->method !== 'OPTIONS') {
+                $resource = new Resource($resource);
                 $response = ($resource->kind === 'collection')
                     ? $this->requestCollection($resource)
                     : $this->requestResource($resource);
@@ -361,8 +361,6 @@ class Router
         $where = $resource->where;
         $safe_method = in_array($this->method, ['GET', 'HEAD']);
         $resource_query = $resource->query;
-        $resource_data = $this->resources[$resource->name];
-
         $fields = $this->parseFields($resource);
 
         $sort = $resource_query['sort'] ?? '';
@@ -504,10 +502,8 @@ class Router
     {
         $response = $this->prepareResponse();
 
-        $resource_data = $this->resources[$resource->name];
         $resource_class = $resource->model_class;
         $model = $resource_class::getInstance($resource->where);
-
         $fields = $this->parseFields($resource);
 
         $body = null;
