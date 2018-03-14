@@ -194,7 +194,7 @@ class Router
         array $resources,
         array $config = null
     ) {
-        $this->url = $url;
+        $this->url = rtrim($url, '/');
 
         foreach ($resources as $resource => $data) {
             if (gettype($data) === 'string') {
