@@ -5,13 +5,11 @@
  * @see LICENSE
  */
 
-namespace aryelgois\Medools;
+namespace aryelgois\MedoolsRouter;
 
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
-use aryelgois\Medools\Router\RouteException;
-use aryelgois\Medools\Router\Resource;
-use aryelgois\Medools\Router\Response;
+use aryelgois\MedoolsRouter\Exceptions\RouteException;
 
 /**
  * A Router class to bootstrap RESTful APIs based on aryelgois/medools

@@ -5,7 +5,9 @@
  * @see LICENSE
  */
 
-namespace aryelgois\Medools\Router;
+namespace aryelgois\MedoolsRouter\Exceptions;
+
+use aryelgois\MedoolsRouter\Response;
 
 /**
  * Error detected when processing a route

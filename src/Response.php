@@ -5,7 +5,7 @@
  * @see LICENSE
  */
 
-namespace aryelgois\Medools\Router;
+namespace aryelgois\MedoolsRouter;
 
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
