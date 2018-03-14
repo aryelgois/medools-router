@@ -619,7 +619,7 @@ class Router
      */
 
     /**
-     * Parses Request Accept
+     * Parses request Accept
      *
      * NOTE:
      * - If $resource does not comply to $accept, but it does not forbid any of
@@ -743,7 +743,7 @@ class Router
     }
 
     /**
-     * Tells what is requested in a URI
+     * Parses a URI route
      *
      * @param string $uri Route to be parsed
      *
