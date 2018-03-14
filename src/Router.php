@@ -554,7 +554,9 @@ class Router
                             }
                         }
                     }
-                    $response->headers['Link'] = $this->headerLink($routes);
+                    if (!empty($routes)) {
+                        $response->headers['Link'] = $this->headerLink($routes);
+                    }
                 } else {
                     $body = $model->toArray();
                 }
