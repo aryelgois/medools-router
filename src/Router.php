@@ -499,7 +499,6 @@ class Router
     {
         $response = $this->prepareResponse();
 
-        $resource_type = $resource->content_type;
         $resource_data = $this->resources[$resource->name];
         $resource_class = $resource->model_class;
         $model = $resource_class::getInstance($resource->where);
@@ -510,32 +509,28 @@ class Router
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
-                if ($resource_type !== null) {
-                    $resource_types = $this->computeResourceTypes(
-                        $resource->name
-                    );
-                    $handler = $resource_types[$resource_type]['handler'];
-                    if (is_array($handler)) {
-                        $handler = $handler[$resource->kind];
-                    }
-                    if ($handler !== null) {
-                        if (is_callable($handler)) {
-                            if ($this->method === 'HEAD') {
-                                ob_start();
-                                $handler($resource);
-                                ob_end_clean();
-                            } else {
-                                $handler($resource);
-                            }
-                            return;
+                $resource_types = $this->computeResourceTypes($resource->name);
+                $handler = $resource_types[$resource->content_type]['handler'];
+                if (is_array($handler)) {
+                    $handler = $handler[$resource->kind];
+                }
+                if ($handler !== null) {
+                    if (is_callable($handler)) {
+                        if ($this->method === 'HEAD') {
+                            ob_start();
+                            $handler($resource);
+                            ob_end_clean();
                         } else {
-                            $message = "Resource '$resource->name' has invalid "
-                                . "$resource_type handler";
-                            $this->sendError(
-                                static::ERROR_INTERNAL_SERVER,
-                                $message
-                            );
+                            $handler($resource);
                         }
+                        return;
+                    } else {
+                        $message = "Resource '$resource->name' has invalid "
+                            . "$resource->content_type handler";
+                        $this->sendError(
+                            static::ERROR_INTERNAL_SERVER,
+                            $message
+                        );
                     }
                 }
 
