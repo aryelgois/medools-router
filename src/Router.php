@@ -367,9 +367,9 @@ class Router
         if ($sort !== '') {
             $sort = explode(',', $sort);
             $order = [];
-            foreach ($sort as $key => $value) {
+            foreach ($sort as $id => $value) {
                 if (strpos($value, '-') === 0) {
-                    $sort[$key] = $value = substr($value, 1);
+                    $sort[$id] = $value = substr($value, 1);
                     $order[$value] = 'DESC';
                 } else {
                     $order[] = $value;
@@ -965,12 +965,12 @@ class Router
 
         $result = null;
         $higher = $min;
-        foreach ($list as $key => $value) {
+        foreach ($list as $id => $value) {
             $value = Utils::numberLimit($value, $min, $max);
             if ($value == $max) {
-                return $key;
+                return $id;
             } elseif ($value > $higher) {
-                $result = $key;
+                $result = $id;
                 $higher = $value;
             }
         }
