@@ -349,26 +349,23 @@ class Router
     /**
      * When requested route points to a collection
      *
-     * @param Resource $resource From processed route
-     * @param array    $query    Parsed query
-     * @param array    $data     Parsed data
-     * @param string   $type     Parsed accept
+     * @param Resource $resource Processed route
      *
-     * @return array data for GET request
+     * @return Response
+     * @return null     If response was sent by external handler
      */
-    protected function requestCollection(
-        Resource $resource,
-        array $query,
-        array $data,
-        string $type = null
-    ) {
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
-        $resource_data = $this->resources[$resource->name];
+    protected function requestCollection(Resource $resource)
+    {
+        $response = $this->prepareResponse();
+
         $where = $resource->where;
+        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+        $resource_query = $resource->query;
+        $resource_data = $this->resources[$resource->name];
 
         $fields = $this->parseFields($resource);
 
-        $sort = $query['sort'] ?? '';
+        $sort = $resource_query['sort'] ?? '';
         if ($sort !== '') {
             $sort = explode(',', $sort);
             $order = [];
@@ -384,10 +381,10 @@ class Router
             $where['ORDER'] = $order;
         }
 
-        $per_page = ($safe_method || isset($query['page']))
+        $per_page = ($safe_method || isset($resource_query['page']))
             ? $this->per_page
             : 0;
-        $per_page = $query['per_page'] ?? $per_page;
+        $per_page = $resource_query['per_page'] ?? $per_page;
         if ($per_page === 'all') {
             $per_page = 0;
         }
@@ -397,7 +394,7 @@ class Router
                 "Invalid 'per_page' parameter"
             );
         } elseif ($per_page > 0) {
-            $page = $query['page'] ?? 1;
+            $page = $resource_query['page'] ?? 1;
             if (!is_numeric($page) || $page < 1) {
                 $this->sendError(
                     static::ERROR_INVALID_QUERY_PARAMETER,
@@ -410,20 +407,17 @@ class Router
                 $pages = ceil($count / $per_page);
                 $routes = [];
 
-                $tmp = $query;
+                $tmp = $resource_query;
                 $tmp['page'] = 1;
                 $routes['first'] = http_build_query($tmp);
                 if ($page > 1) {
-                    $tmp = $query;
                     $tmp['page'] = $page - 1;
                     $routes['previous'] = http_build_query($tmp);
                 }
                 if ($page < $pages) {
-                    $tmp = $query;
                     $tmp['page'] = $page + 1;
                     $routes['next'] = http_build_query($tmp);
                 }
-                $tmp = $query;
                 $tmp['page'] = $pages;
                 $routes['last'] = http_build_query($tmp);
 
@@ -432,8 +426,8 @@ class Router
                 }
                 unset($route);
 
-                $this->headerLink($routes);
-                header('X-Total-Count: ' . $count);
+                $response->headers['Link'] = $this->headerLink($routes);
+                $response->headers['X-Total-Count'] = $count;
             }
 
             $where['LIMIT'] = [($page - 1) * $per_page, $per_page];
@@ -441,33 +435,39 @@ class Router
 
         $collection = $resource->model_class::dump($where, $fields);
 
-        if ($safe_method && $type !== null) {
-            $resource_types = $this->computeResourceTypes($resource->name);
-            $handler = $resource_types[$type]['handler'];
-            if (is_array($handler)) {
-                $handler = $handler[$resource->kind] ?? null;
-                if ($handler === null) {
-                    header_remove("Link");
-                    header_remove("X-Total-Count");
-                    return;
-                }
-            }
-            if ($handler !== null) {
-                header_remove("Link");
-                header_remove("X-Total-Count");
-                if (is_callable($handler)) {
-                    return $handler($resource, $fields);
-                } else {
-                    $message = "Content-Type '$type' for collection of resource"
-                        . " '$resource->name' has invalid handler";
-                    $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
-                }
-            }
-        }
-
+        $body = null;
         switch ($this->method) {
+            case 'GET':
+            case 'HEAD':
+                $resource_types = $this->computeResourceTypes($resource->name);
+                $handler = $resource_types[$resource->content_type]['handler'];
+                if (is_array($handler)) {
+                    $handler = $handler[$resource->kind];
+                }
+                if ($handler !== null) {
+                    if (is_callable($handler)) {
+                        if ($this->method === 'HEAD') {
+                            ob_start();
+                            $handler($resource);
+                            ob_end_clean();
+                        } else {
+                            $handler($resource);
+                        }
+                        return;
+                    } else {
+                        $message = "Resource '$resource->name' has invalid "
+                            . "$resource->content_type handler (collection)";
+                        $this->sendError(
+                            static::ERROR_INTERNAL_SERVER,
+                            $message
+                        );
+                    }
+                }
+
+                $body = $collection;
+                break;
+
             case 'DELETE':
-                return;
                 break;
 
             case 'PATCH':
@@ -484,7 +484,12 @@ class Router
                 break;
         }
 
-        return $collection;
+        if ($body !== null) {
+            $response->headers['Content-Type'] = 'application/json';
+            $response->body = $body;
+        }
+
+        return $response;
     }
 
     /**
