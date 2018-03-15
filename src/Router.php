@@ -323,10 +323,14 @@ class Router
             }
 
             if ($this->method !== 'OPTIONS') {
-                $resource = new Resource($resource);
-                $response = ($resource->kind === 'collection')
-                    ? $this->requestCollection($resource)
-                    : $this->requestResource($resource);
+                $resource_obj = new Resource;
+                foreach ($resource as $key => $value) {
+                    $resource_obj->$key = $value;
+                }
+
+                $response = ($resource_obj->kind === 'collection')
+                    ? $this->requestCollection($resource_obj)
+                    : $this->requestResource($resource_obj);
 
                 if (headers_sent()) {
                     return;
