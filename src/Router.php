@@ -433,6 +433,7 @@ class Router
             $where['LIMIT'] = [($page - 1) * $per_page, $per_page];
         }
 
+        $resource->where = $where;
         $collection = $resource->model_class::dump($where, $fields);
 
         $body = null;
