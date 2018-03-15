@@ -764,7 +764,7 @@ class Router
         }
         $extension = null;
         if (!empty($this->extensions)) {
-            $extension = pathinfo($uri, PATHINFO_EXTENSION);
+            $extension = pathinfo($route, PATHINFO_EXTENSION);
             if (array_key_exists($extension, $this->extensions)) {
                 $route = substr($route, 0, (strlen($extension) + 1) * -1);
             } else {
