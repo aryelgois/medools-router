@@ -7,7 +7,6 @@
 
 namespace aryelgois\MedoolsRouter;
 
-use aryelgois\Utils;
 use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
@@ -17,22 +16,70 @@ use aryelgois\Medools\Exceptions\UnknownColumnException;
  * @license MIT
  * @link https://www.github.com/aryelgois/medools-router
  */
-class Resource extends Utils\ReadOnly
+class Resource
 {
-    const KEYS = [
-        'name'         => 'string', // Key for Router->resources
-        'kind'         => 'string', // 'resource' or 'collection'
-        'model_class'  => 'string', // Fully Qualified Class for a Medools Model
-        'where'        => 'array',  // For loading or dumping model_class
-        'route'        => 'string', // Normalized and cleared route
-        'extension'    => 'string', // Known extension
-        'query'        => 'array',  // Parsed query
-        'data'         => 'array',  // Parsed Content Body
-        'content_type' => 'string', // Which content type should be produced,
-                                    // null means internal content type
-    ];
+    /**
+     * Key for Router->resources
+     *
+     * @var string
+     */
+    public $name;
 
-    const OPTIONAL = ['extension', 'content_type'];
+    /**
+     * 'resource' or 'collection'
+     *
+     * @var string
+     */
+    public $kind;
+
+    /**
+     * Fully Qualified Class for a Medools Model
+     *
+     * @var string
+     */
+    public $model_class;
+
+    /**
+     * For loading or dumping model_class
+     *
+     * @var array
+     */
+    public $where;
+
+    /**
+     * Normalized and cleared route
+     *
+     * @var string
+     */
+    public $route;
+
+    /**
+     * Known extension
+     *
+     * @var string
+     */
+    public $extension;
+
+    /**
+     * Parsed query
+     *
+     * @var array
+     */
+    public $query;
+
+    /**
+     * Parsed Content Body
+     *
+     * @var array
+     */
+    public $data;
+
+    /**
+     * Which content type should be produced, null means internal content type
+     *
+     * @var string
+     */
+    public $content_type;
 
     /**
      * Returns quered fields or all fields
