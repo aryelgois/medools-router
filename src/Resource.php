@@ -103,25 +103,6 @@ class Resource
     }
 
     /**
-     * Checks if Resource has all fields passed
-     *
-     * @param string[] $fields List of fields to test
-     *
-     * @return true   On success
-     * @return string On failure, with error message
-     */
-    public function hasFields(array $fields)
-    {
-        try {
-            $this->model_class::checkUnknownColumn($fields);
-        } catch (UnknownColumnException $e) {
-            return "Resource '$this->name' "
-                . explode(' ', $e->getMessage(), 2)[1];
-        }
-        return true;
-    }
-
-    /**
      * Returns a model Iterator
      *
      * @return ModelIterator
@@ -143,5 +124,24 @@ class Resource
             return $model_class::dump($this->where, $model_class::PRIMARY_KEY);
         }
         return [$this->where];
+    }
+
+    /**
+     * Checks if Resource has all fields passed
+     *
+     * @param string[] $fields List of fields to test
+     *
+     * @return true   On success
+     * @return string On failure, with error message
+     */
+    public function hasFields(array $fields)
+    {
+        try {
+            $this->model_class::checkUnknownColumn($fields);
+        } catch (UnknownColumnException $e) {
+            return "Resource '$this->name' "
+                . explode(' ', $e->getMessage(), 2)[1];
+        }
+        return true;
     }
 }
