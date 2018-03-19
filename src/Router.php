@@ -79,6 +79,7 @@ class Router
      * @var string[]
      */
     protected $implemented_methods = [
+        'DELETE',
         'GET',
         'HEAD',
         'OPTIONS',
@@ -469,6 +470,19 @@ class Router
                 break;
 
             case 'DELETE':
+                foreach ($resource->getIterator() as $id => $model) {
+                    if (!$model->delete()) {
+                        $route = $resource->route . '/'
+                            . (strrpos($resource->route, '/') == 0
+                                ? $this->getPrimaryKey($model)
+                                : $id + 1);
+
+                        $this->sendError(
+                            static::ERROR_INTERNAL_SERVER,
+                            "Resource '$route' could not be deleted"
+                        );
+                    }
+                }
                 break;
 
             case 'PATCH':
@@ -568,6 +582,12 @@ class Router
                 break;
 
             case 'DELETE':
+                if (!$model->delete()) {
+                    $this->sendError(
+                        static::ERROR_INTERNAL_SERVER,
+                        "Resource '$resource->route' could not be deleted"
+                    );
+                }
                 break;
 
             case 'PATCH':
