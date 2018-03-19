@@ -45,7 +45,7 @@ class Response
      *
      * @var int
      */
-    public $status = HttpResponse::HTTP_OK;
+    public $status;
 
     /**
      * If should enable zlib compression when appropriate
@@ -64,8 +64,10 @@ class Response
      */
     public function output()
     {
-        if (empty($this->body)) {
-            $this->status = HttpResponse::HTTP_NO_CONTENT;
+        if ($this->status === null) {
+            $this->status = (empty($this->body))
+                ? HttpResponse::HTTP_NO_CONTENT
+                : HttpResponse::HTTP_OK;
         }
 
         if ($this->request_method === 'HEAD'
