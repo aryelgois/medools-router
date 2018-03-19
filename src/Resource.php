@@ -7,6 +7,7 @@
 
 namespace aryelgois\MedoolsRouter;
 
+use aryelgois\Medools\ModelIterator;
 use aryelgois\Medools\Exceptions\UnknownColumnException;
 
 /**
@@ -118,6 +119,16 @@ class Resource
                 . explode(' ', $e->getMessage(), 2)[1];
         }
         return true;
+    }
+
+    /**
+     * Returns a model Iterator
+     *
+     * @return ModelIterator
+     */
+    public function getIterator()
+    {
+        return new ModelIterator($this->model_class, $this->where);
     }
 
     /**
