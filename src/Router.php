@@ -9,6 +9,7 @@ namespace aryelgois\MedoolsRouter;
 
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
+use aryelgois\Medools\Model;
 use aryelgois\MedoolsRouter\Exceptions\RouteException;
 
 /**
