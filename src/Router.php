@@ -470,18 +470,20 @@ class Router
                 break;
 
             case 'DELETE':
+                $list = [];
                 foreach ($resource->getIterator() as $id => $model) {
-                    if (!$model->delete()) {
-                        $route = $resource->route . '/'
-                            . (strrpos($resource->route, '/') == 0
-                                ? $this->getPrimaryKey($model)
-                                : $id + 1);
+                    $route = $resource->route . '/'
+                        . (strrpos($resource->route, '/') == 0
+                            ? $this->getPrimaryKey($model)
+                            : $id + 1);
 
-                        $this->sendError(
-                            static::ERROR_INTERNAL_SERVER,
-                            "Resource '$route' could not be deleted"
-                        );
+                    $result = $this->deleteModel($model, $resource, $route);
+                    if ($result !== null) {
+                        $list[] = Utils::arrayWhitelist($result, $fields);
                     }
+                }
+                if (!empty($list)) {
+                    $body = $list;
                 }
                 break;
 
@@ -582,11 +584,9 @@ class Router
                 break;
 
             case 'DELETE':
-                if (!$model->delete()) {
-                    $this->sendError(
-                        static::ERROR_INTERNAL_SERVER,
-                        "Resource '$resource->route' could not be deleted"
-                    );
+                $result = $this->deleteModel($model, $resource);
+                if ($result !== null) {
+                    $body = Utils::arrayWhitelist($result, $fields);
                 }
                 break;
 
@@ -892,6 +892,35 @@ class Router
             }
             $previous = $resource;
         }
+    }
+
+    /*
+     * Modify Database
+     * =========================================================================
+     */
+
+    /**
+     * Deletes a Model
+     *
+     * @param Model    $model    Model to be deleted
+     * @param Resource $resource Resource that loaded $model
+     * @param string   $route    Alternative route to $model
+     *
+     * @return mixed[]|null
+     */
+    protected function deleteModel(
+        Model $model,
+        Resource $resource,
+        string $route = null
+    ) {
+        if ($model->delete()) {
+            return ($model::SOFT_DELETE !== null ? $model->getData() : null);
+        }
+
+        $message = "Resource '" . ($route ?? $resource->route)
+            . "' could not be deleted";
+
+        $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
     }
 
     /*
