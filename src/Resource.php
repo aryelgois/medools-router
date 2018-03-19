@@ -121,7 +121,7 @@ class Resource
     }
 
     /**
-     * Returns a list of model ids
+     * Returns a list of arrays to load models
      *
      * @return array[]
      */
