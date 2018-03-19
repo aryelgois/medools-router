@@ -435,7 +435,6 @@ class Router
         }
 
         $resource->where = $where;
-        $collection = $resource->model_class::dump($where, $fields);
 
         $body = null;
         switch ($this->method) {
@@ -466,7 +465,7 @@ class Router
                     }
                 }
 
-                $body = $collection;
+                $body = $resource->model_class::dump($where, $fields);
                 break;
 
             case 'DELETE':
