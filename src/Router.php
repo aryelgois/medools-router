@@ -985,6 +985,18 @@ class Router
     }
 
     /**
+     * Returns normalized Model's Primary Key
+     *
+     * @param Model $model Model whose Primary Key will be returned
+     *
+     * @return string
+     */
+    protected function getPrimaryKey(Model $model)
+    {
+        return implode($this->primary_key_separator, $model->getPrimaryKey());
+    }
+
+    /**
      * Generates content for Link header
      *
      * @param string[] $routes List of routes
