@@ -878,7 +878,7 @@ class Router
                     if ($where === null) {
                         $this->sendError(
                             static::ERROR_INVALID_RESOURCE_OFFSET,
-                            "Invalid resource offset for '$resource': '$id'"
+                            "Invalid collection offset for '$resource': '$id'"
                         );
                     }
                 }
