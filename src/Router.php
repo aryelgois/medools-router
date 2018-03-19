@@ -228,7 +228,7 @@ class Router
                         . " $type given";
                     $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
                 }
-                $this->{$property} = $value;
+                $this->$property = $value;
             }
         }
     }
@@ -575,7 +575,7 @@ class Router
                     foreach ($resource_class::FOREIGN_KEYS as $column => $fk) {
                         foreach ($this->resources as $res_name => $res_data) {
                             if ($res_data['model'] === $fk[0]) {
-                                $foreign = $model->{$column};
+                                $foreign = $model->$column;
                                 if ($foreign !== null) {
                                     $routes[$column] = "/$res_name/"
                                         . $this->getPrimaryKey($foreign);
