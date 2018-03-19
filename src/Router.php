@@ -551,10 +551,8 @@ class Router
                             if ($res_data['model'] === $fk[0]) {
                                 $foreign = $model->{$column};
                                 if ($foreign !== null) {
-                                    $routes[$column] = "/$res_name/" . implode(
-                                        $this->primary_key_separator,
-                                        $foreign->getPrimaryKey()
-                                    );
+                                    $routes[$column] = "/$res_name/"
+                                        . $this->getPrimaryKey($foreign);
                                 }
                                 break;
                             }
