@@ -83,6 +83,7 @@ class Router
         'GET',
         'HEAD',
         'OPTIONS',
+        'PATCH',
     ];
 
     /**
@@ -488,6 +489,16 @@ class Router
                 break;
 
             case 'PATCH':
+                $body = [];
+                foreach ($resource->getIterator() as $id => $model) {
+                    $route = $resource->route . '/'
+                        . (strrpos($resource->route, '/') == 0
+                            ? $this->getPrimaryKey($model)
+                            : $id + 1);
+
+                    $result = $this->updateModel($model, $resource, $route);
+                    $body[] = Utils::arrayWhitelist($result, $fields);
+                }
                 break;
 
             case 'POST':
@@ -591,6 +602,8 @@ class Router
                 break;
 
             case 'PATCH':
+                $result = $this->updateModel($model, $resource);
+                $body = Utils::arrayWhitelist($result, $fields);
                 break;
 
             case 'POST':
@@ -919,6 +932,32 @@ class Router
 
         $message = "Resource '" . ($route ?? $resource->route)
             . "' could not be deleted";
+
+        $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
+    }
+
+    /**
+     * Updates a Model
+     *
+     * @param Model    $model    Model to be updated
+     * @param Resource $resource Resource that loaded $model
+     * @param string   $route    Alternative route to $model
+     *
+     * @return mixed[]
+     */
+    protected function updateModel(
+        Model $model,
+        Resource $resource,
+        string $route = null
+    ) {
+        $model->fill($resource->data);
+
+        if ($model->update(array_keys($resource->data))) {
+            return $model->getData();
+        }
+
+        $message = "Resource '" . ($route ?? $resource->route)
+            . "' could not be updated";
 
         $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
     }
