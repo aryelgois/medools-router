@@ -38,7 +38,7 @@ class Response
      *
      * @var string
      */
-    public $request_method;
+    public $method;
 
     /**
      * HTTP Status code
@@ -50,7 +50,7 @@ class Response
     /**
      * If should enable zlib compression when appropriate
      *
-     * Only if $request_method is not HEAD and response can have body
+     * Only if $method is not HEAD and response can have body
      *
      * @var boolean
      */
@@ -70,7 +70,7 @@ class Response
                 : HttpResponse::HTTP_OK;
         }
 
-        if ($this->request_method === 'HEAD'
+        if ($this->method === 'HEAD'
             || !HttpResponse::canHaveBody($this->status)
         ) {
             $content_type = 'HEAD';

@@ -1105,7 +1105,7 @@ class Router
     protected function prepareResponse()
     {
         $response = new Response();
-        $response->request_method = $this->method;
+        $response->method = $this->method;
         $response->zlib_compression = $this->zlib_compression;
         return $response;
     }
