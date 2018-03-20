@@ -65,7 +65,7 @@ class Response
     public function output()
     {
         if ($this->status === null) {
-            $this->status = (empty($this->body))
+            $this->status = (empty($this->body) || $this->method === 'HEAD')
                 ? HttpResponse::HTTP_NO_CONTENT
                 : HttpResponse::HTTP_OK;
         }
