@@ -48,6 +48,15 @@ class Resource
     public $where;
 
     /**
+     * If $where points to a existing row in $model_class
+     *
+     * It is only used if $kind is 'resource'
+     *
+     * @var boolean
+     */
+    public $exists;
+
+    /**
      * Normalized and cleared route
      *
      * @var string

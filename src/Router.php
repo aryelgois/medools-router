@@ -536,8 +536,11 @@ class Router
         $response = $this->prepareResponse();
 
         $resource_class = $resource->model_class;
-        $model = $resource_class::getInstance($resource->where);
         $fields = $this->parseFields($resource);
+
+        if ($resource->exists) {
+            $model = $resource_class::getInstance($resource->where);
+        }
 
         $body = null;
         switch ($this->method) {
@@ -879,19 +882,31 @@ class Router
                     );
                     $where = $collection[$id - 1] ?? null;
                     if ($where === null) {
-                        $this->sendError(
-                            static::ERROR_INVALID_RESOURCE_OFFSET,
-                            "Invalid collection offset for '$resource': '$id'"
-                        );
+                        if ($is_last && $this->method === 'PUT') {
+                            $exists = false;
+                        } else {
+                            $message = 'Invalid collection offset for '
+                                . "'$resource': '$id'";
+                            $this->sendError(
+                                static::ERROR_INVALID_RESOURCE_OFFSET,
+                                $message
+                            );
+                        }
                     }
                 }
 
-                $model = $resource_class::getInstance($where);
+                $model = ($where !== null)
+                    ? $resource_class::getInstance($where)
+                    : null;
                 if ($model === null) {
-                    $this->sendError(
-                        static::ERROR_RESOURCE_NOT_FOUND,
-                        "Resource '$resource/$id' not found"
-                    );
+                    if ($is_last && $this->method === 'PUT') {
+                        $exists = false;
+                    } else {
+                        $this->sendError(
+                            static::ERROR_RESOURCE_NOT_FOUND,
+                            "Resource '$resource/$id' not found"
+                        );
+                    }
                 }
 
                 if ($is_last) {
@@ -902,6 +917,7 @@ class Router
                             'kind' => 'resource',
                             'model_class' => $resource_class,
                             'where' => $where,
+                            'exists' => $exists ?? true,
                         ]
                     );
                 }
