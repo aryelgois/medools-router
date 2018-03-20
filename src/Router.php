@@ -84,6 +84,7 @@ class Router
         'HEAD',
         'OPTIONS',
         'PATCH',
+        'POST',
     ];
 
     /**
@@ -502,6 +503,8 @@ class Router
                 break;
 
             case 'POST':
+                $response->status = HttpResponse::HTTP_CREATED;
+                $response->headers['Location'] = $this->createModel($resource);
                 break;
 
             case 'PUT':
@@ -911,6 +914,31 @@ class Router
      * Modify Database
      * =========================================================================
      */
+
+    /**
+     * Creates a Model in the Database
+     *
+     * @param Resource $resource Processed route
+     *
+     * @return string With route for new Model
+     */
+    protected function createModel(Resource $resource)
+    {
+        $model = new $resource->model_class;
+        $model->fill($resource->data);
+
+        if ($model->save()) {
+            return "$this->url/$resource->name/" . $this->getPrimaryKey($model);
+        }
+
+        $code = (empty($resource->data))
+            ? static::ERROR_INVALID_PAYLOAD
+            : static::ERROR_INTERNAL_SERVER;
+
+        $message = "Resource '$resource->name' could not be created";
+
+        $this->sendError($code, $message);
+    }
 
     /**
      * Deletes a Model
