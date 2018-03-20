@@ -918,6 +918,8 @@ class Router
     /**
      * Creates a Model in the Database
      *
+     * It sends an error Response on failure
+     *
      * @param Resource $resource Processed route
      *
      * @return string With route for new Model
@@ -943,6 +945,8 @@ class Router
     /**
      * Deletes a Model
      *
+     * It sends an error Response on failure
+     *
      * @param Model    $model    Model to be deleted
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
@@ -966,6 +970,8 @@ class Router
 
     /**
      * Updates a Model
+     *
+     * It sends an error Response on failure
      *
      * @param Model    $model    Model to be updated
      * @param Resource $resource Resource that loaded $model
