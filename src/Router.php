@@ -854,10 +854,7 @@ class Router
                 if ($model === null) {
                     $where = @array_combine(
                         $resource_class::PRIMARY_KEY,
-                        explode(
-                            $this->primary_key_separator,
-                            $id
-                        )
+                        explode($this->primary_key_separator, $id)
                     );
                     if ($where === false) {
                         $this->sendError(
