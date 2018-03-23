@@ -480,9 +480,13 @@ class Router
                             ? $this->getPrimaryKey($model)
                             : $id + 1);
 
-                    $result = $this->deleteModel($model, $resource, $route);
-                    if ($result !== null) {
-                        $list[] = Utils::arrayWhitelist($result, $fields);
+                    $this->deleteModel($model, $resource, $route);
+
+                    if ($model::SOFT_DELETE !== null) {
+                        $list[] = Utils::arrayWhitelist(
+                            $model->getData(),
+                            $fields
+                        );
                     }
                 }
                 if (!empty($list)) {
@@ -498,14 +502,17 @@ class Router
                             ? $this->getPrimaryKey($model)
                             : $id + 1);
 
-                    $result = $this->updateModel($model, $resource, $route);
-                    $body[] = Utils::arrayWhitelist($result, $fields);
+                    $this->updateModel($model, $resource, $route);
+
+                    $body[] = Utils::arrayWhitelist($model->getData(), $fields);
                 }
                 break;
 
             case 'POST':
+                $this->checkMissingFields($resource);
+                $result = $this->createModel($resource);
                 $response->status = HttpResponse::HTTP_CREATED;
-                $response->headers['Location'] = $this->createModel($resource);
+                $response->headers['Location'] = $this->url . $result['route'];
                 break;
 
             case 'PUT':
