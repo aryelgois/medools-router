@@ -578,19 +578,7 @@ class Router
                 ) {
                     $body = $model->getData();
 
-                    $routes = [];
-                    foreach ($resource_class::FOREIGN_KEYS as $column => $fk) {
-                        foreach ($this->resources as $res_name => $res_data) {
-                            if ($res_data['model'] === $fk[0]) {
-                                $foreign = $model->$column;
-                                if ($foreign !== null) {
-                                    $routes[$column] = "/$res_name/"
-                                        . $this->getPrimaryKey($foreign);
-                                }
-                                break;
-                            }
-                        }
-                    }
+                    $routes = $this->getForeignRoutes($model, $fields);
                     if (!empty($routes)) {
                         $response->headers['Link'] = $this->headerLink($routes);
                     }
@@ -1160,6 +1148,40 @@ class Router
         }
 
         return $result;
+    }
+
+    /**
+     * Returns list of routes to Model's Foreigns
+     *
+     * @param Model    $model  Model whose Foreigns' routes will be returned
+     * @param string[] $filter Only returns routes for foreigns listed here
+     *                         Invalid columns are silently ignored
+     *
+     * @return string[]
+     */
+    protected function getForeignRoutes(Model $model, array $filter = null)
+    {
+        $routes = [];
+
+        $foreigns = $model::FOREIGN_KEYS;
+        if (!empty($filter)) {
+            $foreigns = Utils::arrayWhitelist($foreigns, $filter);
+        }
+
+        foreach ($foreigns as $column => $fk) {
+            foreach ($this->resources as $resource_name => $resource_data) {
+                if ($resource_data['model'] === $fk[0]) {
+                    $foreign = $model->$column;
+                    if ($foreign !== null) {
+                        $routes[$column] = "/$resource_name/"
+                            . $this->getPrimaryKey($foreign);
+                    }
+                    break;
+                }
+            }
+        }
+
+        return $routes;
     }
 
     /**
