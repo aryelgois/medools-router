@@ -969,7 +969,7 @@ class Router
      *
      * @param Resource $resource Processed route
      *
-     * @return string With route for new Model
+     * @return string[] With keys 'model' and 'route'
      */
     protected function createModel(Resource $resource)
     {
@@ -977,7 +977,11 @@ class Router
         $model->fill($resource->data);
 
         if ($model->save()) {
-            return "$this->url/$resource->name/" . $this->getPrimaryKey($model);
+            $route = "/$resource->name/" . $this->getPrimaryKey($model);
+            return [
+                'model' => $model,
+                'route' => $route,
+            ];
         }
 
         $code = (empty($resource->data))
@@ -997,8 +1001,6 @@ class Router
      * @param Model    $model    Model to be deleted
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
-     *
-     * @return mixed[]|null
      */
     protected function deleteModel(
         Model $model,
@@ -1006,7 +1008,7 @@ class Router
         string $route = null
     ) {
         if ($model->delete()) {
-            return ($model::SOFT_DELETE !== null ? $model->getData() : null);
+            return;
         }
 
         $message = "Resource '" . ($route ?? $resource->route)
@@ -1023,8 +1025,6 @@ class Router
      * @param Model    $model    Model to be updated
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
-     *
-     * @return mixed[]
      */
     protected function updateModel(
         Model $model,
@@ -1034,7 +1034,7 @@ class Router
         $model->fill($resource->data);
 
         if ($model->update(array_keys($resource->data))) {
-            return $model->getData();
+            return;
         }
 
         $message = "Resource '" . ($route ?? $resource->route)
