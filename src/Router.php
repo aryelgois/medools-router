@@ -543,7 +543,6 @@ class Router
             $model = $resource_class::getInstance($resource->where);
         }
 
-        $body = null;
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
@@ -571,34 +570,14 @@ class Router
                         );
                     }
                 }
-
-                $expand = $resource->query['expand'] ?? null;
-                if ($expand === 'false'
-                    || !$this->always_expand && $expand === null
-                ) {
-                    $body = $model->getData();
-
-                    $routes = $this->getForeignRoutes($model, $fields);
-                    if (!empty($routes)) {
-                        $response->headers['Link'] = $this->headerLink($routes);
-                    }
-                } else {
-                    $body = $model->toArray();
-                }
-
-                $body = Utils::arrayWhitelist($body, $fields);
                 break;
 
             case 'DELETE':
-                $result = $this->deleteModel($model, $resource);
-                if ($result !== null) {
-                    $body = Utils::arrayWhitelist($result, $fields);
-                }
+                $this->deleteModel($model, $resource);
                 break;
 
             case 'PATCH':
-                $result = $this->updateModel($model, $resource);
-                $body = Utils::arrayWhitelist($result, $fields);
+                $this->updateModel($model, $resource);
                 break;
 
             case 'POST':
@@ -647,17 +626,34 @@ class Router
                         $model->undelete();
                     }
 
-                    $result = $this->updateModel($model, $resource);
-                    $body = Utils::arrayWhitelist($result, $fields);
+                    $this->updateModel($model, $resource);
                 } else {
                     $result = $this->createModel($resource);
                     $response->status = HttpResponse::HTTP_CREATED;
-                    $response->headers['Location'] = $result;
+                    $response->headers['Location'] = $this->url . '/'
+                        . $result['route'];
+
+                    $model = $result['model'];
                 }
                 break;
         }
 
-        if ($body !== null) {
+        if ($this->method !== 'DELETE' || $model::SOFT_DELETE !== null) {
+            $expand = $resource->query['expand'] ?? null;
+            if ($expand === 'false'
+                || !$this->always_expand && $expand === null
+            ) {
+                $body = $model->getData();
+
+                $foreigns = $this->getForeignRoutes($model, $fields);
+                if (!empty($foreigns)) {
+                    $response->headers['Link'] = $this->headerLink($foreigns);
+                }
+            } else {
+                $body = $model->toArray();
+            }
+            $body = Utils::arrayWhitelist($body, $fields);
+
             $response->headers['Content-Type'] = 'application/json';
             $response->body = $body;
         }
