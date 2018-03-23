@@ -593,21 +593,9 @@ class Router
                     $resource->data
                 );
 
-                if ($resource->exists) {
-                    $missing = array_diff(
-                        $model::getRequiredColumns(),
-                        array_keys($resource->data)
-                    );
-                    if (!empty($missing)) {
-                        $message = "Resource '$resource->name' requires the "
-                            . "following missing fields: '"
-                            . implode("', '", $missing) . "'";
-                        $this->sendError(
-                            static::ERROR_INVALID_PAYLOAD,
-                            $message
-                        );
-                    }
+                $this->checkMissingFields($resource);
 
+                if ($resource->exists) {
                     /*
                      * Trying to clear optional columns
                      *
@@ -1043,6 +1031,27 @@ class Router
      * Internal methods
      * =========================================================================
      */
+
+    /**
+     * Checks if resource data fulfills the required columns
+     *
+     * It sends an error Response on failure
+     *
+     * @param Resource $resource Resource
+     */
+    protected function checkMissingFields(Resource $resource)
+    {
+        $missing = array_diff(
+            $resource->model_class::getRequiredColumns(),
+            array_keys($resource->data)
+        );
+
+        if (!empty($missing)) {
+            $message = "Resource '$resource->name' requires the following "
+                . "missing fields: '" . implode("', '", $missing) . "'";
+            $this->sendError(static::ERROR_INVALID_PAYLOAD, $message);
+        }
+    }
 
     /**
      * Checks if a resource has all fields passed
