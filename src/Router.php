@@ -85,6 +85,7 @@ class Router
         'OPTIONS',
         'PATCH',
         'POST',
+        'PUT',
     ];
 
     /**
@@ -620,6 +621,51 @@ class Router
                 break;
 
             case 'PUT':
+                $resource->data = array_merge(
+                    $resource->where,
+                    $resource->data
+                );
+
+                if ($resource->exists) {
+                    $missing = array_diff(
+                        $model::getRequiredColumns(),
+                        array_keys($resource->data)
+                    );
+                    if (!empty($missing)) {
+                        $message = "Resource '$resource->name' requires the "
+                            . "following missing fields: '"
+                            . implode("', '", $missing) . "'";
+                        $this->sendError(
+                            static::ERROR_INVALID_PAYLOAD,
+                            $message
+                        );
+                    }
+
+                    /*
+                     * Trying to clear optional columns
+                     *
+                     * It is better than deleting the model and re-creating it,
+                     * because could trigger ForeignConstraintException
+                     */
+                    $optional = array_filter(array_merge(
+                        $model::OPTIONAL_COLUMNS,
+                        [$model::AUTO_INCREMENT],
+                        $model::getAutoStampColumns()
+                    ));
+                    foreach ($optional as $column) {
+                        $model->$column = null;
+                    }
+                    if ($model::SOFT_DELETE !== null) {
+                        $model->undelete();
+                    }
+
+                    $result = $this->updateModel($model, $resource);
+                    $body = Utils::arrayWhitelist($result, $fields);
+                } else {
+                    $result = $this->createModel($resource);
+                    $response->status = HttpResponse::HTTP_CREATED;
+                    $response->headers['Location'] = $result;
+                }
                 break;
         }
 
