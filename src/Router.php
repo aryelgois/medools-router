@@ -618,7 +618,7 @@ class Router
                 } else {
                     $result = $this->createModel($resource);
                     $response->status = HttpResponse::HTTP_CREATED;
-                    $response->headers['Location'] = $this->url . '/'
+                    $response->headers['Location'] = $this->url
                         . $result['route'];
 
                     $model = $result['model'];
