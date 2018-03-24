@@ -658,6 +658,7 @@ class Router
                         [$model::AUTO_INCREMENT],
                         $model::getAutoStampColumns()
                     ));
+                    $optional = array_diff($optional, $model::PRIMARY_KEY);
                     foreach ($optional as $column) {
                         $model->$column = null;
                     }
