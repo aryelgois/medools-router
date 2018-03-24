@@ -366,6 +366,11 @@ class Router
                     ? $this->requestCollection($resource_obj)
                     : $this->requestResource($resource_obj);
 
+                $content_location = $resource->content_location;
+                if ($content_location !== null) {
+                    $response->headers['Content-Location'] = $content_location;
+                }
+
                 if ($safe_method
                     && ($resource_data['cache'] ?? $this->always_cache)
                 ) {
@@ -616,11 +621,6 @@ class Router
                         );
                     }
                 }
-
-                $content_location = $resource->content_location ?? null;
-                if ($content_location !== null) {
-                    $response->headers['Content-Location'] = $content_location;
-                }
                 break;
 
             case 'DELETE':
@@ -629,6 +629,9 @@ class Router
 
             case 'PATCH':
                 $this->updateModel($model, $resource);
+
+                $location = $this->getContentLocation($model, $resource);
+                $resource->content_location = $location;
                 break;
 
             case 'POST':
@@ -667,6 +670,9 @@ class Router
                     }
 
                     $this->updateModel($model, $resource);
+
+                    $location = $this->getContentLocation($model, $resource);
+                    $resource->content_location = $location;
                 } else {
                     $result = $this->createModel($resource);
                     $response->status = HttpResponse::HTTP_CREATED;
@@ -1260,6 +1266,25 @@ class Router
         }
 
         return $result;
+    }
+
+    /**
+     * Returns Content-Location for a Model in a Resource
+     *
+     * @param Model    $model    Model to get Location
+     * @param Resource $resource Resource that loaded $model
+     *
+     * @return string
+     */
+    protected function getContentLocation(Model $model, Resource $resource)
+    {
+        $query = http_build_query($resource->query);
+
+        $content_location = "$this->url/$resource->name/"
+            . $this->getPrimaryKey($model)
+            . ($query !== '' ? '?' . $query : '');
+
+        return $content_location;
     }
 
     /**
