@@ -52,7 +52,7 @@ class Resource
      *
      * It is only used if $kind is 'resource'
      *
-     * @var boolean
+     * @var boolean|null
      */
     public $exists;
 
@@ -76,7 +76,7 @@ class Resource
     /**
      * Known extension
      *
-     * @var string
+     * @var string|null
      */
     public $extension;
 
