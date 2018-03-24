@@ -375,7 +375,7 @@ class Router
                     $response->headers['Content-Location'] = $content_location;
                 }
 
-                if ($safe_method
+                if (($safe_method || $content_location !== null)
                     && ($resource_data['cache'] ?? $this->always_cache)
                 ) {
                     $response = $this->checkCache(
@@ -558,9 +558,12 @@ class Router
 
             case 'POST':
                 $this->checkMissingFields($resource);
-                $result = $this->createModel($resource);
+
+                $model = $this->createModel($resource);
+                $location = $this->getContentLocation($model, $resource);
+
                 $response->status = HttpResponse::HTTP_CREATED;
-                $response->headers['Location'] = $result['location'];
+                $response->headers['Location'] = $location;
                 break;
 
             case 'PUT':
@@ -676,14 +679,14 @@ class Router
                     $this->updateModel($model, $resource);
 
                     $location = $this->getContentLocation($model, $resource);
-                    $resource->content_location = $location;
                 } else {
-                    $result = $this->createModel($resource);
-                    $response->status = HttpResponse::HTTP_CREATED;
-                    $response->headers['Location'] = $result['location'];
+                    $model = $this->createModel($resource);
+                    $location = $this->getContentLocation($model, $resource);
 
-                    $model = $result['model'];
+                    $response->status = HttpResponse::HTTP_CREATED;
+                    $response->headers['Location'] = $location;
                 }
+                $resource->content_location = $location;
                 break;
         }
 
@@ -1020,7 +1023,7 @@ class Router
      *
      * @param Resource $resource Processed route
      *
-     * @return string[] With keys 'model' and 'location'
+     * @return Model
      */
     protected function createModel(Resource $resource)
     {
@@ -1028,11 +1031,7 @@ class Router
         $model->fill($resource->data);
 
         if ($model->save()) {
-            $route = "/$resource->name/" . $this->getPrimaryKey($model);
-            return [
-                'model' => $model,
-                'location' => $this->url . $route,
-            ];
+            return $model;
         }
 
         $code = (empty($resource->data))
