@@ -353,6 +353,10 @@ class Router
                     if (is_string($extension)) {
                         $resource['content_location'] .= ".$extension";
                     }
+                    $query = http_build_query($query);
+                    if ($query !== '') {
+                        $resource['content_location'] .= '?' . $query;
+                    }
                 }
             }
 
