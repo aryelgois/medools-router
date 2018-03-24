@@ -64,6 +64,16 @@ class Resource
     public $route;
 
     /**
+     * Direct route to Resource
+     *
+     * It is only used if $kind is 'resource' and the original route contained
+     * nested resources
+     *
+     * @var string|null
+     */
+    public $content_location;
+
+    /**
      * Known extension
      *
      * @var string

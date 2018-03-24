@@ -323,6 +323,16 @@ class Router
                         . $resource['content_type'] . ' ' . $resource['kind'];
                     $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
                 }
+
+                if ($resource['content_location'] !== null) {
+                    $extension = $resource_extension ?? array_search(
+                        $accepted,
+                        $this->extensions
+                    );
+                    if (is_string($extension)) {
+                        $resource['content_location'] .= ".$extension";
+                    }
+                }
             }
 
             if ($this->method !== 'OPTIONS') {
@@ -574,6 +584,11 @@ class Router
                             $message
                         );
                     }
+                }
+
+                $content_location = $resource->content_location ?? null;
+                if ($content_location !== null) {
+                    $response->headers['Content-Location'] = $content_location;
                 }
                 break;
 
@@ -912,6 +927,11 @@ class Router
                                 $message
                             );
                         }
+                    } else {
+                        $content_location = "$this->url/$resource/" . implode(
+                            $this->primary_key_separator,
+                            $where
+                        );
                     }
                 }
 
@@ -938,6 +958,7 @@ class Router
                             'model_class' => $resource_class,
                             'where' => $where,
                             'exists' => $exists ?? true,
+                            'content_location' => $content_location ?? null,
                         ]
                     );
                 }
