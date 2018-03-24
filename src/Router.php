@@ -1256,6 +1256,11 @@ class Router
         $min = $min ?? 0;
         $max = $max ?? 1;
 
+        $bounded_list = array_merge([$min, $max], $list);
+
+        $min = min($bounded_list);
+        $max = max($bounded_list);
+
         $result = null;
         $higher = $min;
         foreach ($list as $id => $value) {
