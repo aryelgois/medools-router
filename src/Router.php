@@ -241,7 +241,7 @@ class Router
      * @param string $method  Requested HTTP method
      * @param string $uri     Requested URI
      * @param array  $headers Request Headers
-     * @param string $body    Request body
+     * @param string $body    Request Body
      *
      * @return Response
      * @return null     If response was sent by external handler
@@ -759,7 +759,7 @@ class Router
      * Parses request body
      *
      * @param string $type Request Content-Type
-     * @param string $body Request body
+     * @param string $body Request Body
      *
      * @return array
      */

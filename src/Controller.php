@@ -53,7 +53,7 @@ class Controller
      * @param string $method  Requested HTTP method
      * @param string $uri     Requested URI
      * @param array  $headers Request Headers
-     * @param string $body    Request body
+     * @param string $body    Request Body
      */
     public function run(
         string $method,
