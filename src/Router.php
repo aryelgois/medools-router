@@ -370,7 +370,7 @@ class Router
                     ? $this->requestCollection($resource_obj)
                     : $this->requestResource($resource_obj);
 
-                $content_location = $resource->content_location;
+                $content_location = $resource_obj->content_location;
                 if ($content_location !== null) {
                     $response->headers['Content-Location'] = $content_location;
                 }
