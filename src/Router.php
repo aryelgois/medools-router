@@ -1438,7 +1438,6 @@ class Router
             case static::ERROR_INVALID_RESOURCE_OFFSET:
             case static::ERROR_INVALID_RESOURCE_FOREIGN:
             case static::ERROR_INVALID_PAYLOAD:
-            case static::ERROR_NOT_ACCEPTABLE:
             case static::ERROR_INVALID_QUERY_PARAMETER:
             case static::ERROR_UNKNOWN_FIELDS:
                 $status = HttpResponse::HTTP_BAD_REQUEST;
@@ -1457,6 +1456,10 @@ class Router
                 if ($data !== null) {
                     $response->headers['Allow'] = $data;
                 }
+                break;
+
+            case static::ERROR_NOT_ACCEPTABLE:
+                $status = HttpResponse::HTTP_NOT_ACCEPTABLE;
                 break;
 
             default:
