@@ -779,7 +779,7 @@ class Router
                 if (array_key_exists($accept_type, $available_types)) {
                     $list[$accept_type] = max(
                         $list[$accept_type] ?? 0,
-                        $priority
+                        $priority * $available_types[$accept_type]
                     );
                 }
             } else {
@@ -788,7 +788,7 @@ class Router
                     if ($value > 0 && fnmatch($accept_type, $resource_type)) {
                         $list[$resource_type] = max(
                             $list[$resource_type] ?? 0,
-                            $priority
+                            $priority * $value
                         );
                     }
                 }
