@@ -551,7 +551,7 @@ class Router
                 $this->checkMissingFields($resource);
                 $result = $this->createModel($resource);
                 $response->status = HttpResponse::HTTP_CREATED;
-                $response->headers['Location'] = $this->url . $result['route'];
+                $response->headers['Location'] = $result['location'];
                 break;
 
             case 'PUT':
@@ -678,8 +678,7 @@ class Router
                 } else {
                     $result = $this->createModel($resource);
                     $response->status = HttpResponse::HTTP_CREATED;
-                    $response->headers['Location'] = $this->url
-                        . $result['route'];
+                    $response->headers['Location'] = $result['location'];
 
                     $model = $result['model'];
                 }
@@ -1019,7 +1018,7 @@ class Router
      *
      * @param Resource $resource Processed route
      *
-     * @return string[] With keys 'model' and 'route'
+     * @return string[] With keys 'model' and 'location'
      */
     protected function createModel(Resource $resource)
     {
@@ -1030,7 +1029,7 @@ class Router
             $route = "/$resource->name/" . $this->getPrimaryKey($model);
             return [
                 'model' => $model,
-                'route' => $route,
+                'location' => $this->url . $route,
             ];
         }
 
