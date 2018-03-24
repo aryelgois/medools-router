@@ -32,7 +32,9 @@ class Router
      * @const string[]
      */
     const CONFIGURABLE = [
+        'always_cache'          => 'boolean',
         'always_expand'         => 'boolean',
+        'cache_method'          => 'string',
         'default_content_type'  => 'array',
         'extensions'            => 'array',
         'implemented_methods'   => 'array',
@@ -43,11 +45,30 @@ class Router
     ];
 
     /**
+     * If GET and HEAD requests always check cache headers
+     *
+     * @var boolean
+     */
+    protected $always_cache = true;
+
+    /**
      * If foreign models are always expanded in a resource request
      *
      * @var boolean
      */
     protected $always_expand = false;
+
+    /**
+     * Function used to hash the Response Body for HTTP Caching
+     *
+     * It receives a string with the body serialized
+     *
+     * NOTE:
+     * - Caching is only done for GET and HEAD Request methods
+     *
+     * @var string
+     */
+    protected $cache_method = 'md5';
 
     /**
      * List of HTTP methods implemented
@@ -344,6 +365,16 @@ class Router
                 $response = ($resource_obj->kind === 'collection')
                     ? $this->requestCollection($resource_obj)
                     : $this->requestResource($resource_obj);
+
+                if ($safe_method
+                    && ($resource_data['cache'] ?? $this->always_cache)
+                ) {
+                    $response = $this->checkCache(
+                        $response,
+                        $headers['If-None-Match'] ?? '',
+                        $resource_data['max_age'] ?? 0
+                    );
+                }
 
                 if (headers_sent()) {
                     return;
@@ -1057,6 +1088,56 @@ class Router
      * Internal methods
      * =========================================================================
      */
+
+    /**
+     * Checks if Response is modified from Client's cache
+     *
+     * It adds caching Headers
+     *
+     * It sends an error Response on failure
+     *
+     * @param Response $response Response to be checked
+     * @param string   $e_tags   Request If-None-Match Header
+     * @param integer  $max_age  Resource max_age
+     *
+     * @return Response
+     */
+    protected function checkCache(
+        Response $response,
+        string $e_tags,
+        int $max_age
+    ) {
+        $result = $response;
+
+        $cache_method = $this->cache_method;
+        if (is_callable($cache_method)) {
+            $hash = '"' . $cache_method(serialize($response->body)) . '"';
+
+            if (strpos($e_tags, $hash) !== false) {
+                $reuse_headers = Utils::arrayWhitelist(
+                    $response->headers,
+                    [
+                        'Content-Location',
+                    ]
+                );
+
+                $result = $this->prepareResponse();
+                $result->status = HttpResponse::HTTP_NOT_MODIFIED;
+                $result->headers = $reuse_headers;
+            }
+
+            $result->headers['ETag'] = $hash;
+            $result->headers['Cache-Control'] = 'private, max-age=' . $max_age
+                . ', must-revalidate';
+        } else {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                "Router config 'cache_method' is invalid"
+            );
+        }
+
+        return $result;
+    }
 
     /**
      * Checks if resource data fulfills the required columns
