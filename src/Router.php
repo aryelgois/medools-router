@@ -628,7 +628,11 @@ class Router
                 break;
 
             case 'PATCH':
-                $this->updateModel($model, $resource);
+                $new_location = $this->updateModel($model, $resource);
+
+                if (is_string($new_location)) {
+                    $response->headers['Content-Location'] = $new_location;
+                }
                 break;
 
             case 'POST':
@@ -666,7 +670,11 @@ class Router
                         $model->undelete();
                     }
 
-                    $this->updateModel($model, $resource);
+                    $new_location = $this->updateModel($model, $resource);
+
+                    if (is_string($new_location)) {
+                        $response->headers['Content-Location'] = $new_location;
+                    }
                 } else {
                     $result = $this->createModel($resource);
                     $response->status = HttpResponse::HTTP_CREATED;
@@ -1067,6 +1075,10 @@ class Router
      * @param Model    $model    Model to be updated
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
+     *
+     * @return true   On success
+     * @return string With new Content-Location if Resource kind is 'resource'
+     *                and if PRIMARY_KEY was changed
      */
     protected function updateModel(
         Model $model,
@@ -1076,7 +1088,20 @@ class Router
         $model->fill($resource->data);
 
         if ($model->update(array_keys($resource->data))) {
-            return;
+            if ($resource->kind === 'resource') {
+                $primary_key_changed = !empty(array_diff_assoc(
+                    $resource->where,
+                    array_merge($resource->where, $resource->data)
+                ));
+
+                if ($primary_key_changed) {
+                    $new_location = "$this->url/$resource->name/"
+                        . $this->getPrimaryKey($model);
+                    return $new_location;
+                }
+            }
+
+            return true;
         }
 
         $message = "Resource '" . ($route ?? $resource->route)
