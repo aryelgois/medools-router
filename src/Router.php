@@ -238,11 +238,11 @@ class Router
     /**
      * Processes a $method request to $uri
      *
-     * @param string $method Requested HTTP method
-     * @param string $uri    Requested URI
-     * @param string $accept Request Accept
-     * @param string $type   Request Content-Type
-     * @param string $body   Request body
+     * @param string $method  Requested HTTP method
+     * @param string $uri     Requested URI
+     * @param array  $headers Request Headers
+     * @param string $type    Request Content-Type
+     * @param string $body    Request body
      *
      * @return Response
      * @return null     If response was sent by external handler
@@ -250,7 +250,7 @@ class Router
     public function run(
         string $method,
         string $uri,
-        string $accept,
+        array $headers,
         string $type,
         string $body
     ) {
@@ -314,7 +314,7 @@ class Router
 
                 $resource['content_type'] = $accepted = $this->parseAccept(
                     $resource_name,
-                    $resource_accept ?? $accept
+                    $resource_accept ?? $headers['Accept'] ?? '*/*'
                 );
 
                 $handlers = $resource_types[$accepted]['handler'];

@@ -72,13 +72,11 @@ class Controller
         }
         $actual_method = strtoupper($actual_method ?? $method);
 
-        $accept = $headers['Accept'] ?? '*/*';
-
         try {
             $response = $this->router->run(
                 $actual_method,
                 $uri,
-                $accept,
+                $headers,
                 $type,
                 $body
             );
