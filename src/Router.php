@@ -345,7 +345,7 @@ class Router
                     $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
                 }
 
-                if ($resource['content_location'] !== null) {
+                if (($resource['content_location'] ?? null) !== null) {
                     $extension = $resource_extension ?? array_search(
                         $accepted,
                         $this->extensions
