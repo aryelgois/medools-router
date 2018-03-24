@@ -53,14 +53,12 @@ class Controller
      * @param string $method  Requested HTTP method
      * @param string $uri     Requested URI
      * @param array  $headers Request Headers
-     * @param string $type    Request Content-Type
      * @param string $body    Request body
      */
     public function run(
         string $method,
         string $uri,
         array $headers,
-        string $type,
         string $body
     ) {
         if ($this->router === null) {
@@ -77,7 +75,6 @@ class Controller
                 $actual_method,
                 $uri,
                 $headers,
-                $type,
                 $body
             );
             if ($response !== null) {

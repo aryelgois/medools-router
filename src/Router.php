@@ -241,7 +241,6 @@ class Router
      * @param string $method  Requested HTTP method
      * @param string $uri     Requested URI
      * @param array  $headers Request Headers
-     * @param string $type    Request Content-Type
      * @param string $body    Request body
      *
      * @return Response
@@ -251,7 +250,6 @@ class Router
         string $method,
         string $uri,
         array $headers,
-        string $type,
         string $body
     ) {
         $this->method = strtoupper($method);
@@ -281,7 +279,7 @@ class Router
             $resource_accept = $this->extensions[$resource_extension] ?? null;
 
             parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-            $data = $this->parseBody($type, $body);
+            $data = $this->parseBody($headers['Content-Type'] ?? '', $body);
             $resource['query'] = $query;
             $resource['data'] = $data;
 
