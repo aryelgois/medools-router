@@ -102,7 +102,16 @@ class Resource
     public $content_type;
 
     /**
+     * Contains preprocessed data
+     *
+     * @var mixed[]
+     */
+    protected $cache;
+
+    /**
      * Returns quered fields
+     *
+     * It supports special fields that expand to others
      *
      * @return string[] On success
      * @return string   On failure, with error message
@@ -114,7 +123,17 @@ class Resource
             return [];
         }
 
-        $fields = explode(',', $query_fields);
+        $special = $this->getSpecialFields();
+        foreach ($special as $key => $value) {
+            $special[$key] = implode(',', $value);
+        }
+
+        $fields = array_filter(explode(',', str_replace(
+            array_keys($special),
+            $special,
+            $query_fields
+        )));
+
         $message = $this->hasFields($fields);
         if ($message !== true) {
             return $message;
@@ -144,6 +163,32 @@ class Resource
             return $model_class::dump($this->where, $model_class::PRIMARY_KEY);
         }
         return [$this->where];
+    }
+
+    /**
+     * Returns map of special fields
+     *
+     * @return array[]
+     */
+    public function getSpecialFields()
+    {
+        $cached = $this->cache['special_fields'] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $model = $this->model_class;
+        $special = [
+            'PRIMARY_KEY' => $model::PRIMARY_KEY,
+            'AUTO_INCREMENT' => (array) $model::AUTO_INCREMENT,
+            'STAMP_COLUMNS' => $model::STAMP_COLUMNS,
+            'OPTIONAL_COLUMNS' => $model::OPTIONAL_COLUMNS,
+            'FOREIGN_KEYS' => array_keys($model::FOREIGN_KEYS),
+            'SOFT_DELETE' => (array) $model::SOFT_DELETE,
+        ];
+
+        $this->cache['special_fields'] = $special;
+        return $special;
     }
 
     /**
