@@ -415,7 +415,7 @@ class Router
                     $response->headers['Content-Location'] = $content_location;
                 }
 
-                if (($safe_method || $content_location !== null)
+                if ($this->method !== 'HEAD' && !empty($response->body)
                     && ($resource_data['cache'] ?? $this->always_cache)
                 ) {
                     $response = $this->checkCache(
