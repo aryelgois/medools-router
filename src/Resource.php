@@ -102,7 +102,7 @@ class Resource
     public $content_type;
 
     /**
-     * Returns quered fields or all fields
+     * Returns quered fields
      *
      * @return string[] On success
      * @return string   On failure, with error message
@@ -110,15 +110,16 @@ class Resource
     public function getFields()
     {
         $query_fields = $this->query['fields'] ?? '';
-        if ($query_fields !== '') {
-            $fields = explode(',', $query_fields);
-            $message = $this->hasFields($fields);
-            if ($message !== true) {
-                return $message;
-            }
-            return $fields;
+        if ($query_fields === '') {
+            return [];
         }
-        return $this->model_class::COLUMNS;
+
+        $fields = explode(',', $query_fields);
+        $message = $this->hasFields($fields);
+        if ($message !== true) {
+            return $message;
+        }
+        return $fields;
     }
 
     /**

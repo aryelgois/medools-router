@@ -622,10 +622,11 @@ class Router
                     $this->deleteModel($model, $resource, $route);
 
                     if ($model::SOFT_DELETE !== null) {
-                        $list[] = Utils::arrayWhitelist(
-                            $model->getData(),
-                            $fields
-                        );
+                        $tmp = $model->getData();
+                        if (!empty($fields)) {
+                            $tmp = Utils::arrayWhitelist($tmp, $fields);
+                        }
+                        $list[] = $tmp;
                     }
                 }
                 if (!empty($list)) {
@@ -643,7 +644,11 @@ class Router
 
                     $this->updateModel($model, $resource, $route);
 
-                    $body[] = Utils::arrayWhitelist($model->getData(), $fields);
+                    $tmp = $model->getData();
+                    if (!empty($fields)) {
+                        $tmp = Utils::arrayWhitelist($tmp, $fields);
+                    }
+                    $body[] = $tmp;
                 }
                 break;
 
@@ -795,7 +800,9 @@ class Router
             } else {
                 $body = $model->toArray();
             }
-            $body = Utils::arrayWhitelist($body, $fields);
+            if (!empty($fields)) {
+                $body = Utils::arrayWhitelist($body, $fields);
+            }
 
             $response->headers['Content-Type'] = 'application/json';
             $response->body = $body;
