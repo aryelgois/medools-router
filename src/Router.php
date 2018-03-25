@@ -526,13 +526,22 @@ class Router
             foreach ($sort as $id => $value) {
                 if (strpos($value, '-') === 0) {
                     $sort[$id] = $value = substr($value, 1);
+                    if ($value === '') {
+                        unset($sort[$id]);
+                        continue;
+                    }
                     $order[$value] = 'DESC';
+                } elseif ($value === '') {
+                    unset($sort[$id]);
+                    continue;
                 } else {
                     $order[] = $value;
                 }
             }
-            $this->checkUnknownField($resource, $sort);
-            $where['ORDER'] = $order;
+            if (!empty($order)) {
+                $this->checkUnknownField($resource, $sort);
+                $where['ORDER'] = $order;
+            }
         }
 
         /*
