@@ -415,16 +415,6 @@ class Router
                     $response->headers['Content-Location'] = $content_location;
                 }
 
-                if ($this->method !== 'HEAD' && !empty($response->body)
-                    && ($resource_data['cache'] ?? $this->always_cache)
-                ) {
-                    $response = $this->checkCache(
-                        $response,
-                        $headers['If-None-Match'] ?? '',
-                        $resource_data['max_age'] ?? 0
-                    );
-                }
-
                 if (headers_sent()) {
                     return;
                 }
@@ -436,6 +426,16 @@ class Router
             if ($this->method === 'OPTIONS') {
                 $response->headers['Allow'] = $allow;
             }
+        }
+
+        if ($this->method !== 'HEAD' && !empty($response->body)
+            && ($resource_data['cache'] ?? $this->always_cache)
+        ) {
+            $response = $this->checkCache(
+                $response,
+                $headers['If-None-Match'] ?? '',
+                $resource_data['max_age'] ?? 0
+            );
         }
 
         return $response;
