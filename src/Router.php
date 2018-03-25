@@ -375,7 +375,10 @@ class Router
 
                 $handlers = $resource_types[$accepted]['handler'];
                 if (is_array($handlers)
-                    && ($handlers[$resource['kind']] ?? null) === null
+                    && (!array_key_exists($resource['kind'], $handlers)
+                        || $accepted !== 'application/json'
+                        && $handlers[$resource['kind']] === null
+                    )
                 ) {
                     $message = "Resource '$resource_name' can not generate "
                         . $resource['content_type'] . ' ' . $resource['kind'];
