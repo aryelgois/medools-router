@@ -490,6 +490,9 @@ class Router
                 if (is_array($value) && count($value) === 1) {
                     $value = $value[0];
                 }
+                if (in_array($key, ['', 'ne']) && $value === 'NULL') {
+                    $value = null;
+                }
                 if ($key !== '') {
                     $key = '[' . static::FITLER_OPERATORS[$key] . ']';
                 }
