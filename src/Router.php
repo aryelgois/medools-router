@@ -198,10 +198,24 @@ class Router
     /**
      * List of resources available in the Router
      *
+     * Each key is a resource name which maps to a Fully Qualified Model Class
+     * or an array with the keys:
+     * - 'model'        string          (required) Fully Qualified Model Class
+     * - 'methods'      string|string[] Allowed HTTP methods. Defaults to
+     *                                  IMPLEMENTED_METHODS. 'OPTIONS' is
+     *                                  implicitly included
+     * - 'content_type' mixed[]         Map of special Content-Types and their
+     *                                  external handlers
+     * - 'filters'      string|string[] List of columns that can be used as
+     *                                  query parameters to filter collection
+     *                                  requests
+     * - 'cache'        boolean         If caching Headers should be sent
+     * - 'max_age'      int             Cache-Control max-age (seconds)
+     *
      * NOTE:
      * - Resource names should be in plural
      *
-     * @var array[]
+     * @var mixed[]
      */
     protected $resources = [];
 
