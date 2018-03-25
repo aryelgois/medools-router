@@ -487,11 +487,11 @@ class Router
             }
 
             foreach ($pack as $key => $value) {
-                if ($key !== '') {
-                    $key = '[' . static::FITLER_OPERATORS[$key] . ']';
-                }
                 if (is_array($value) && count($value) === 1) {
                     $value = $value[0];
+                }
+                if ($key !== '') {
+                    $key = '[' . static::FITLER_OPERATORS[$key] . ']';
                 }
                 $where[$filter . $key] = $value;
             }
