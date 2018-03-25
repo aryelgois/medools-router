@@ -440,6 +440,7 @@ class Router
         $safe_method = in_array($this->method, ['GET', 'HEAD']);
         $resource_query = $resource->query;
         $fields = $this->parseFields($resource);
+        $has_fields = ($resource->query['fields'] ?? '') !== '';
 
         /*
          * Filter query parameters
@@ -625,6 +626,8 @@ class Router
                         $tmp = $model->getData();
                         if (!empty($fields)) {
                             $tmp = Utils::arrayWhitelist($tmp, $fields);
+                        } elseif ($has_fields) {
+                            continue;
                         }
                         $list[] = $tmp;
                     }
@@ -647,6 +650,8 @@ class Router
                     $tmp = $model->getData();
                     if (!empty($fields)) {
                         $tmp = Utils::arrayWhitelist($tmp, $fields);
+                    } elseif ($has_fields) {
+                        continue;
                     }
                     $body[] = $tmp;
                 }
@@ -692,6 +697,7 @@ class Router
 
         $resource_class = $resource->model_class;
         $fields = $this->parseFields($resource);
+        $has_fields = ($resource->query['fields'] ?? '') !== '';
 
         if ($resource->exists) {
             $model = $resource_class::getInstance($resource->where);
@@ -802,6 +808,8 @@ class Router
             }
             if (!empty($fields)) {
                 $body = Utils::arrayWhitelist($body, $fields);
+            } elseif ($has_fields) {
+                $body = null;
             }
 
             $response->headers['Content-Type'] = 'application/json';
