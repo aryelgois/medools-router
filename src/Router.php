@@ -446,6 +446,21 @@ class Router
          * Filter query parameters
          */
         $filters = $this->resources[$resource->name]['filters'] ?? [];
+        if (is_string($filters)) {
+            if ($filters === 'ALL') {
+                $filters = $resource->model_class::COLUMNS;
+            } else {
+                $special = $resource->getSpecialFields();
+                if (array_key_exists($filters, $special)) {
+                    $filters = $special[$filters];
+                } else {
+                    $this->sendError(
+                        static::ERROR_INTERNAL_SERVER,
+                        "Resource '$resource->name' has invalid filters group"
+                    );
+                }
+            }
+        }
         $operators = static::FITLER_OPERATORS;
         $operators_single = ['gt', 'ge', 'lt', 'le', 'rx'];
         foreach ($filters as $filter) {
