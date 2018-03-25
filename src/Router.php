@@ -441,6 +441,9 @@ class Router
         $resource_query = $resource->query;
         $fields = $this->parseFields($resource);
 
+        /*
+         * Filter query parameters
+         */
         $filters = $this->resources[$resource->name]['filters'] ?? [];
         $operators = static::FITLER_OPERATORS;
         $operators_single = ['gt', 'ge', 'lt', 'le', 'rx'];
@@ -494,6 +497,9 @@ class Router
             }
         }
 
+        /*
+         * Sort query parameter
+         */
         $sort = $resource_query['sort'] ?? '';
         if ($sort !== '') {
             $sort = explode(',', $sort);
@@ -510,6 +516,9 @@ class Router
             $where['ORDER'] = $order;
         }
 
+        /*
+         * Per page and page query parameters
+         */
         $per_page = ($safe_method || isset($resource_query['page']))
             ? $this->per_page
             : 0;
@@ -564,6 +573,9 @@ class Router
 
         $resource->where = $where;
 
+        /*
+         * Process request
+         */
         $body = null;
         switch ($this->method) {
             case 'GET':
