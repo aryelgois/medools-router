@@ -102,7 +102,7 @@ class Resource
     public $content_type;
 
     /**
-     * Contains preprocessed data
+     * Resource's cache
      *
      * @var mixed[]
      */
