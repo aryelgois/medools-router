@@ -45,6 +45,29 @@ class Router
     ];
 
     /**
+     * Maps filter operators in query parameters to their Medoo counterpart
+     *
+     * NOTE:
+     * - 'bw' and 'nw' accept two values separated by ','
+     * - 'ne', 'lk' and 'nk' accept one or more values separated by ','
+     * - They also accept their multiple values in array query parameters
+     *
+     * @const mixed[]
+     */
+    const FITLER_OPERATORS = [
+        'gt' => '>',      // Greater Than
+        'ge' => '>=',     // Greater or Equal to
+        'lt' => '<',      // Lesser Than
+        'le' => '<=',     // Lesser or Equal to
+        'ne' => '!',      // Not Equal
+        'bw' => '<>',     // BetWeen
+        'nw' => '><',     // Not betWeen
+        'lk' => '~',      // LiKe
+        'nk' => '!~',     // Not liKe
+        'rx' => 'REGEXP', // RegeXp
+    ];
+
+    /**
      * If GET and HEAD requests always check cache headers
      *
      * @var boolean
@@ -417,6 +440,59 @@ class Router
         $safe_method = in_array($this->method, ['GET', 'HEAD']);
         $resource_query = $resource->query;
         $fields = $this->parseFields($resource);
+
+        $filters = $this->resources[$resource->name]['filters'] ?? [];
+        $operators = static::FITLER_OPERATORS;
+        $operators_single = ['gt', 'ge', 'lt', 'le', 'rx'];
+        foreach ($filters as $filter) {
+            $q = $resource_query[$filter] ?? null;
+            $pack = [];
+            if (is_array($q)) {
+                foreach ($q as $key => $value) {
+                    if (is_numeric($key)) {
+                        $pack[''][] = $value;
+                    } elseif (in_array($key, $operators_single)) {
+                        if (is_array($value)) {
+                            $this->sendError(
+                                static::ERROR_INVALID_QUERY_PARAMETER,
+                                "Filter operator '$key' can not be array"
+                            );
+                        }
+                        $pack[$key] = $value;
+                    } elseif (array_key_exists($key, $operators)) {
+                        $pack[$key] = (is_array($value))
+                            ? $value
+                            : explode(',', $value);
+
+                        if (in_array($key, ['bw', 'nw'])
+                            && count($pack[$key]) !== 2
+                        ) {
+                            $this->sendError(
+                                static::ERROR_INVALID_QUERY_PARAMETER,
+                                "Filter operator '$key' needs two values"
+                            );
+                        }
+                    } else {
+                        $this->sendError(
+                            static::ERROR_INVALID_QUERY_PARAMETER,
+                            "Invalid filter operator '$key' in '$filter'"
+                        );
+                    }
+                }
+            } elseif ($q !== null) {
+                $pack[''] = explode(',', $q);
+            }
+
+            foreach ($pack as $key => $value) {
+                if ($key !== '') {
+                    $key = '[' . static::FITLER_OPERATORS[$key] . ']';
+                }
+                if (is_array($value) && count($value) === 1) {
+                    $value = $value[0];
+                }
+                $where[$filter . $key] = $value;
+            }
+        }
 
         $sort = $resource_query['sort'] ?? '';
         if ($sort !== '') {
