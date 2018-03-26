@@ -10,7 +10,7 @@ namespace aryelgois\MedoolsRouter;
 use aryelgois\Utils\Utils;
 use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Model;
-use aryelgois\MedoolsRouter\Exceptions\RouteException;
+use aryelgois\MedoolsRouter\Exceptions\RouterException;
 
 /**
  * A Router class to bootstrap RESTful APIs based on aryelgois/medools
@@ -1561,7 +1561,7 @@ class Router
      * @param string $message Error message
      * @param mixed  $data    Additional data used by some error codes
      *
-     * @throws RouteException With error Response
+     * @throws RouterException With error Response
      */
     protected function sendError(
         int $code,
@@ -1623,6 +1623,6 @@ class Router
             'message' => $message,
         ];
 
-        throw new RouteException($response);
+        throw new RouterException($response);
     }
 }

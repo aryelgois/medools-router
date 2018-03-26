@@ -7,7 +7,7 @@
 
 namespace aryelgois\MedoolsRouter;
 
-use aryelgois\MedoolsRouter\Exceptions\RouteException;
+use aryelgois\MedoolsRouter\Exceptions\RouterException;
 
 /**
  * Simplifies Router usage
@@ -42,7 +42,7 @@ class Controller
     ) {
         try {
             $this->router = new Router($url, $resources, $config);
-        } catch (RouteException $e) {
+        } catch (RouterException $e) {
             $e->getResponse()->output();
         }
     }
@@ -80,7 +80,7 @@ class Controller
             if ($response !== null) {
                 $response->output();
             }
-        } catch (RouteException $e) {
+        } catch (RouterException $e) {
             $e->getResponse()->output();
         }
     }

@@ -10,13 +10,13 @@ namespace aryelgois\MedoolsRouter\Exceptions;
 use aryelgois\MedoolsRouter\Response;
 
 /**
- * Error detected when processing a route
+ * Error sent from the Router
  *
  * @author Aryel Mota Góis
  * @license MIT
  * @link https://www.github.com/aryelgois/medools-router
  */
-class RouteException extends \Exception
+class RouterException extends \Exception
 {
     /**
      * Response stored
@@ -26,7 +26,7 @@ class RouteException extends \Exception
     protected $response;
 
     /**
-     * Creates a new RouteException object
+     * Creates a new RouterException object
      *
      * @param Response  $response Response with error message
      * @param Throwable $previous Previous exception for chaining
