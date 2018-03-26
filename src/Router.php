@@ -224,6 +224,7 @@ class Router
      * =========================================================================
      */
 
+    const ERROR_UNKNOWN_ERROR = 0;
     const ERROR_INTERNAL_SERVER = 1;
     const ERROR_METHOD_NOT_IMPLEMENTED = 2;
     const ERROR_INVALID_RESOURCE = 3;
@@ -1609,6 +1610,7 @@ class Router
                 $status = HttpResponse::HTTP_NOT_ACCEPTABLE;
                 break;
 
+            case static::ERROR_UNKNOWN_ERROR:
             default:
                 $status = HttpResponse::HTTP_INTERNAL_SERVER_ERROR;
                 $message = 'Unknown error'
