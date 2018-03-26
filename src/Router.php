@@ -250,6 +250,10 @@ class Router
      * @param string $url       Router URL
      * @param array  $resources List of resources available
      * @param array  $config    Configurations for the Router @see CONFIGURABLE
+     *
+     * @throws RouterException If any $resource does not define a Model class
+     * @throws RouterException If any $config key is invalid
+     * @throws RouterException If any $config has invalid type
      */
     public function __construct(
         string $url,
@@ -304,6 +308,12 @@ class Router
      *
      * @return Response
      * @return null     If response was sent by external handler
+     *
+     * @throws RouterException If $method is not implemented
+     * @throws RouterException If $method is not allowed
+     * @throws RouterException If $uri has invalid extension
+     * @throws RouterException If Resource's Content-Type handler does not allow
+     *                         requested kind
      */
     public function run(
         string $method,
@@ -449,6 +459,13 @@ class Router
      *
      * @return Response
      * @return null     If response was sent by external handler
+     *
+     * @throws RouterException If Resource has invalid filters group
+     * @throws RouterException If filter query parameter is invalid
+     * @throws RouterException If per_page query parameter is invalid
+     * @throws RouterException If page query parameter is invalid
+     * @throws RouterException If Resource has invalid Content-Type handler
+     * @throws RouterException If requesting with PUT method
      */
     protected function requestCollection(Resource $resource)
     {
@@ -732,6 +749,9 @@ class Router
      *
      * @return Response
      * @return null     If response was sent by external handler
+     *
+     * @throws RouterException If Resource has invalid Content-Type handler
+     * @throws RouterException If requesting with POST method
      */
     protected function requestResource(Resource $resource)
     {
@@ -903,6 +923,9 @@ class Router
      * @param string $accept   Request Accept
      *
      * @return string
+     *
+     * @throws RouterException If Resource has invalid Content-Type
+     * @throws RouterException If no Content-Type is acceptable
      */
     protected function parseAccept(string $resource, string $accept)
     {
@@ -969,6 +992,9 @@ class Router
      * @param string $body Request Body
      *
      * @return array
+     *
+     * @throws RouterException If Request Content-Type is not supported
+     * @throws RouterException If Request Body could not be parsed
      */
     protected function parseBody(string $type, string $body)
     {
@@ -999,11 +1025,11 @@ class Router
     /**
      * Parses fields query and validate against a resource
      *
-     * It sends an error Response on failure
-     *
      * @param Resource $resource Resource
      *
      * @return string[]
+     *
+     * @throws RouterException If fields query parameter has invalid fields
      */
     protected function parseFields(Resource $resource)
     {
@@ -1021,6 +1047,12 @@ class Router
      *
      * @return mixed[] On success
      * @return null    On failure
+     *
+     * @throws RouterException If requesting invalid resource
+     * @throws RouterException If resource is incorrectly nested
+     * @throws RouterException If route has invalid resource id
+     * @throws RouterException If route has invalid collection offset
+     * @throws RouterException If resource was not found
      */
     protected function parseRoute(string $uri)
     {
@@ -1167,11 +1199,11 @@ class Router
     /**
      * Creates a Model in the Database
      *
-     * It sends an error Response on failure
-     *
      * @param Resource $resource Processed route
      *
      * @return Model
+     *
+     * @throws RouterException If could not save the new Model
      */
     protected function createModel(Resource $resource)
     {
@@ -1194,11 +1226,11 @@ class Router
     /**
      * Deletes a Model
      *
-     * It sends an error Response on failure
-     *
      * @param Model    $model    Model to be deleted
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
+     *
+     * @throws RouterException If could not delete the Model
      */
     protected function deleteModel(
         Model $model,
@@ -1218,11 +1250,11 @@ class Router
     /**
      * Updates a Model
      *
-     * It sends an error Response on failure
-     *
      * @param Model    $model    Model to be updated
      * @param Resource $resource Resource that loaded $model
      * @param string   $route    Alternative route to $model
+     *
+     * @throws RouterException If could not update the Model
      */
     protected function updateModel(
         Model $model,
@@ -1251,13 +1283,13 @@ class Router
      *
      * It adds caching Headers
      *
-     * It sends an error Response on failure
-     *
      * @param Response $response Response to be checked
      * @param string   $e_tags   Request If-None-Match Header
      * @param integer  $max_age  Resource max_age
      *
      * @return Response
+     *
+     * @throws RouterException If 'cache_method' config is invalid
      */
     protected function checkCache(
         Response $response,
@@ -1299,9 +1331,9 @@ class Router
     /**
      * Checks if resource data fulfills the required columns
      *
-     * It sends an error Response on failure
-     *
      * @param Resource $resource Resource
+     *
+     * @throws RouterException If required fields are missing
      */
     protected function checkMissingFields(Resource $resource)
     {
@@ -1320,10 +1352,10 @@ class Router
     /**
      * Checks if a resource has all fields passed
      *
-     * It sends an error Response on failure
-     *
      * @param Resource $resource Resource
      * @param string[] $fields   List of fields to test
+     *
+     * @throws RouterException If there are unknown fields
      */
     protected function checkUnknownField(Resource $resource, array $fields)
     {
@@ -1342,6 +1374,8 @@ class Router
      * @param string $resource Resource name
      *
      * @return array[]
+     *
+     * @throws RouterException If resource's Content-Type is invalid
      */
     protected function computeResourceTypes(string $resource)
     {
