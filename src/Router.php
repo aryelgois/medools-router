@@ -281,7 +281,7 @@ class Router
             if (!empty($invalid)) {
                 $message = 'Invalid config key'
                     . (count($invalid) > 1 ? 's' : '')
-                    . ": '" . implode("', '", $invalid) . "'";
+                    . ": '" . implode("', '", array_keys($invalid)) . "'";
                 $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
             }
             foreach ($config as $property => $value) {
