@@ -288,9 +288,8 @@ class Router
                 $type = gettype($value);
                 $expected = static::CONFIGURABLE[$property];
                 if ($type !== $expected) {
-                    $message = "Key '$property' in Argument 3 passed to "
-                        . __METHOD__ . "() must be of the type $expected,"
-                        . " $type given";
+                    $message = "Config '$property' must be of the type "
+                        . "$expected, $type given";
                     $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
                 }
                 $this->$property = $value;
