@@ -263,7 +263,11 @@ class Router
 
     const ERROR_UNKNOWN_ERROR = 0;
     const ERROR_INTERNAL_SERVER = 1;
+    const ERROR_INVALID_CREDENTIALS = 14;
+    const ERROR_UNAUTHENTICATED = 15;
+    const ERROR_INVALID_TOKEN = 16;
     const ERROR_METHOD_NOT_IMPLEMENTED = 2;
+    const ERROR_UNAUTHORIZED = 17;
     const ERROR_INVALID_RESOURCE = 3;
     const ERROR_INVALID_RESOURCE_ID = 4;
     const ERROR_INVALID_RESOURCE_OFFSET = 5;
@@ -1697,9 +1701,31 @@ class Router
                 $status = HttpResponse::HTTP_INTERNAL_SERVER_ERROR;
                 break;
 
+            case static::ERROR_INVALID_CREDENTIALS:
+            case static::ERROR_UNAUTHENTICATED:
+                $status = HttpResponse::HTTP_UNAUTHORIZED;
+                $realm = $this->authentication['realm'] ?? null;
+                $auth = 'Basic'
+                    . ($realm !== null ? ' realm="' . $realm . '"' : '')
+                    . ' charset="UTF-8"';
+                $response->headers['WWW-Authenticate'] = $auth;
+                break;
+
+            case static::ERROR_INVALID_TOKEN:
+                $status = HttpResponse::HTTP_UNAUTHORIZED;
+                $realm = $this->authentication['realm'] ?? null;
+                $auth = 'Bearer'
+                    . ($realm !== null ? ' realm="' . $realm . '"' : '');
+                $response->headers['WWW-Authenticate'] = $auth;
+                break;
+
             case static::ERROR_METHOD_NOT_IMPLEMENTED:
                 $status = HttpResponse::HTTP_NOT_IMPLEMENTED;
                 $response->headers['Allow'] = $data;
+                break;
+
+            case static::ERROR_UNAUTHORIZED:
+                $status = HttpResponse::HTTP_FORBIDDEN;
                 break;
 
             case static::ERROR_INVALID_RESOURCE:
