@@ -1228,15 +1228,24 @@ class Router
         $model = new $resource->model_class;
         $model->fill($resource->data);
 
-        if ($model->save()) {
+        $result = $model->save();
+        if ($result === true) {
             return $model;
         }
 
-        $code = (empty($resource->data))
+        $code = (empty($resource->data) || $result === null)
             ? static::ERROR_INVALID_PAYLOAD
             : static::ERROR_INTERNAL_SERVER;
 
-        $message = "Resource '$resource->name' could not be created";
+        $message = "Resource '$resource->name' could not be created: ";
+
+        if (is_string($result)) {
+            $message .= "Database failure ($result)";
+        } elseif ($result === false) {
+            $message .= 'post-save failure';
+        } else {
+            $message .= 'pre-save failure';
+        }
 
         $this->sendError($code, $message);
     }
