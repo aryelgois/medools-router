@@ -13,7 +13,7 @@
         "php": "^7.0",
         "ext-zlib": "*",
         "aryelgois/utils": "^0.5",
-        "aryelgois/medools": "^4.3"
+        "aryelgois/medools": "^5.0"
     },
     "autoload": {
         "psr-4": {
