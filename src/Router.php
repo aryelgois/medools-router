@@ -12,6 +12,9 @@ use aryelgois\Utils\Format;
 use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Model;
 use aryelgois\MedoolsRouter\Exceptions\RouterException;
+use aryelgois\MedoolsRouter\Models\Authentication;
+use aryelgois\MedoolsRouter\Models\Authorization;
+use Firebase\JWT\JWT;
 
 /**
  * A Router class to bootstrap RESTful APIs based on aryelgois/medools
@@ -344,6 +347,218 @@ class Router
                 $this->$property = $value;
             }
         }
+    }
+
+    /**
+     * Authenticates an Authorization Header
+     *
+     * @param string $auth Request Authorization Header
+     * @param string $type Expected Authentication type
+     *
+     * @return null           If Authentication is disabled
+     * @return false          If Authorization is empty (Bearer $type)
+     * @return Response       If Basic Authentication was successful
+     * @return Authentication If Bearer Authentication was successful
+     *
+     * @throws RouterException If Authorization is empty (Basic $type)
+     * @throws RouterException If there is any problem with the secret
+     * @throws RouterException If could not authenticate
+     * @throws RouterException If could not generate the token
+     * @throws RouterException If Authorization type is invalid
+     */
+    public function authenticate(string $auth, string $type)
+    {
+        $config = $this->authentication ?? null;
+        if ($config === null) {
+            return;
+        } elseif (is_string($config)) {
+            $config = ['secret' => $config];
+        }
+        $config = array_merge(
+            [
+                'secret' => null,
+                'claims' => [],
+                'exp' => null,
+                'alg' => 'HS256',
+            ],
+            $config
+        );
+
+        if ($auth === '') {
+            switch ($type) {
+                case 'Basic':
+                    $this->sendError(
+                        static::ERROR_INVALID_CREDENTIALS,
+                        'Authorization Header is empty'
+                    );
+                    break;
+
+                case 'Bearer':
+                    return false;
+                    break;
+            }
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                'Invalid Authorization type'
+            );
+        }
+
+        $stamp = time();
+
+        if ($config['secret'] === null) {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                'Missing authentication secret'
+            );
+        }
+        $secret_path = realpath($config['secret']);
+
+        $secret_exp = null;
+        if (is_dir($secret_path)) {
+            $files = array_diff(scandir($secret_path), ['.', '..']);
+            if (empty($files)) {
+                $this->sendError(
+                    static::ERROR_INTERNAL_SERVER,
+                    'No secret file found'
+                );
+            }
+            foreach ($files as $file) {
+                $exp = basename($file);
+                if ($exp > $stamp) {
+                    $secret_exp = (int) $exp;
+                    break;
+                }
+            }
+            if ($secret_exp === null) {
+                $this->sendError(
+                    static::ERROR_INTERNAL_SERVER,
+                    'All secret files expired'
+                );
+            }
+            $secret_file = "$secret_path/$file";
+        } elseif (is_file($secret_path)) {
+            $secret_file = $secret_path;
+        } else {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                'Secret file does not exist'
+            );
+        }
+        $secret = file_get_contents($secret_file);
+
+        list($type_h, $credentials) = array_pad(explode(' ', $auth, 2), 2, '');
+        if ($type !== $type_h) {
+            $this->sendError(
+                static::ERROR_INVALID_CREDENTIALS,
+                'Invalid Authorization type'
+            );
+        }
+
+        switch ($type) {
+            case 'Basic':
+                $credentials = explode(':', base64_decode($credentials), 2);
+                list($username, $password) = array_pad($credentials, 2, '');
+
+                $authentication = Authentication::getInstance([
+                    'username' => $username,
+                ]);
+
+                if ($authentication === null
+                    || !$authentication->checkPassword($password)
+                ) {
+                    $this->sendError(
+                        static::ERROR_INVALID_CREDENTIALS,
+                        'Invalid credentials'
+                    );
+                }
+
+                if ($authentication->isDeleted()) {
+                    $this->sendError(
+                        static::ERROR_UNAUTHENTICATED,
+                        'Account is disabled'
+                    );
+                }
+
+                $token = array_merge(
+                    $config['claims'],
+                    [
+                        'iss' => $this->url,
+                        'iat' => $stamp,
+                        'user' => $authentication->id,
+                    ]
+                );
+
+                $exp = $config['exp'];
+                if ($exp === null) {
+                    if ($secret_exp !== null) {
+                        $token['exp'] = $secret_exp;
+                    }
+                } else {
+                    $exp += $stamp;
+                    $token['exp'] = ($secret_exp !== null)
+                        ? min($exp, $secret_exp)
+                        : $exp;
+                }
+
+                $response = $this->prepareResponse();
+                $response->headers['Content-Type'] = 'application/jwt';
+
+                try {
+                    $response->body = JWT::encode(
+                        $token,
+                        $secret,
+                        $config['alg']
+                    );
+                } catch (\Exception $e) {
+                    $this->sendError(
+                        static::ERROR_INTERNAL_SERVER,
+                        'Could not generate token: ' . $e->getMessage()
+                    );
+                }
+
+                return $response;
+                break;
+
+            case 'Bearer':
+                try {
+                    $token = JWT::decode(
+                        $credentials,
+                        $secret,
+                        [$config['alg']]
+                    );
+                } catch (\Exception $e) {
+                    $this->sendError(
+                        static::ERROR_INVALID_TOKEN,
+                        'Could not verify token: ' . $e->getMessage()
+                    );
+                }
+
+                $authentication = Authentication::getInstance([
+                    'id' => $token->user,
+                ]);
+
+                if ($authentication === null) {
+                    $this->sendError(
+                        static::ERROR_UNAUTHENTICATED,
+                        'Account not found'
+                    );
+                }
+
+                if ($authentication->isDeleted()) {
+                    $this->sendError(
+                        static::ERROR_UNAUTHENTICATED,
+                        'Account is disabled'
+                    );
+                }
+
+                return $authentication;
+                break;
+        }
+
+        $this->sendError(
+            static::ERROR_INTERNAL_SERVER,
+            'Invalid Authorization type'
+        );
     }
 
     /**
