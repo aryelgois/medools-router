@@ -22,5 +22,16 @@ return [
         'default' => [
             'database_name' => 'my_database',
         ],
+
+        /*
+         * Database for authentication
+         *
+         * You can set the database_name value to the same as your default
+         * database, just remember to create the authentication.yml database
+         * with a different database name
+         */
+        'authentication' => [
+            'database_name' => 'authentication',
+        ],
     ],
 ];
