@@ -150,7 +150,7 @@ class Router
      */
     protected $meta = [
         'version' => 'v0.1.0',
-        'documentation' => 'https://www.github.com/aryelgois/medools-router'
+        'documentation' => 'https://www.github.com/aryelgois/medools-router',
     ];
 
     /**
