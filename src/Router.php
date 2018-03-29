@@ -1665,7 +1665,7 @@ class Router
      * @param string   $e_tags   Request If-None-Match Header
      * @param integer  $max_age  Resource max_age
      *
-     * @return Response
+     * @return Response With caching Headers or with Not Modified status
      *
      * @throws RouterException If 'cache_method' config is invalid
      */
