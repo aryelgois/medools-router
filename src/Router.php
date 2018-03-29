@@ -1988,7 +1988,7 @@ class Router
      */
     protected function prepareResponse()
     {
-        $response = new Response();
+        $response = new Response;
         $response->method = $this->method;
         $response->zlib_compression = $this->zlib_compression;
         return $response;
