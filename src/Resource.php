@@ -48,6 +48,15 @@ class Resource
     public $where;
 
     /**
+     * Filter to apply in $where
+     *
+     * It is only used if $kind is 'collection'
+     *
+     * @var array|null
+     */
+    public $authorized;
+
+    /**
      * If $where points to a existing row in $model_class
      *
      * It is only used if $kind is 'resource'

@@ -1352,7 +1352,8 @@ class Router
      * @throws RouterException If resource is incorrectly nested
      * @throws RouterException If route has invalid resource id
      * @throws RouterException If route has invalid collection offset
-     * @throws RouterException If resource was not found
+     * @throws RouterException If resource was not found. It may exist but the
+     *                         user is not authorized to see it
      */
     protected function parseRoute(string $uri)
     {
@@ -1390,6 +1391,42 @@ class Router
 
             $id = $route[$i + 1] ?? null;
             $is_last = ($route[$i + 2] ?? null) === null;
+
+            if ($this->auth !== null
+                && !$this->isPublic(
+                    $resource,
+                    ($is_last ? $this->method : null)
+                )
+            ) {
+                if ($this->auth === false) {
+                    $code = static::ERROR_UNAUTHENTICATED;
+                } elseif ($this->auth instanceof Authentication) {
+                    $code = static::ERROR_UNAUTHORIZED;
+
+                    $authorization = Authorization::getInstance([
+                        'user' => $this->auth->id,
+                        'resource' => $resource,
+                    ]);
+
+                    if ($authorization !== null) {
+                        $allow = in_array(
+                            ($is_last ? $this->method : 'GET'),
+                            json_decode($authorization->methods, true)
+                        );
+                        if ($allow) {
+                            $code = null;
+                            $authorized = $authorization->filter ?? null;
+                            if ($authorized !== null) {
+                                $authorized = json_decode($authorized, true);
+                            }
+                        }
+                    }
+                }
+                if ($code !== null) {
+                    $this->sendError($code, "You can not access '$resource'");
+                }
+            }
+
             if ($id === null) {
                 $where = ($model !== null)
                     ? static::reverseForeignKey($resource_class, $model)
@@ -1410,6 +1447,7 @@ class Router
                         'kind' => 'collection',
                         'model_class' => $resource_class,
                         'where' => $where,
+                        'authorized' => $authorized ?? null,
                     ]
                 );
             } else {
@@ -1424,6 +1462,13 @@ class Router
                             "Invalid resource id for '$resource': '$id'"
                         );
                     }
+
+                    if (isset($authorized)) {
+                        $where = [
+                            'AND # Requested' => $where,
+                            'AND # Authorized' => $authorized,
+                        ];
+                    }
                 } else {
                     $where = static::reverseForeignKey($resource_class, $model);
                     if ($where === null) {
@@ -1433,6 +1478,13 @@ class Router
                             static::ERROR_INVALID_RESOURCE_FOREIGN,
                             $message
                         );
+                    }
+
+                    if (isset($authorized)) {
+                        $where = [
+                            'AND # Requested' => $where,
+                            'AND # Authorized' => $authorized,
+                        ];
                     }
 
                     $collection = $resource_class::dump(
