@@ -271,6 +271,13 @@ class Router
     ) {
         $this->url = rtrim($url, '/');
 
+        if (empty($resources)) {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                'Resource list is empty'
+            );
+        }
+
         foreach ($resources as $resource => $data) {
             if (gettype($data) === 'string') {
                 $data = ['model' => $data];
