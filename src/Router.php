@@ -1752,6 +1752,43 @@ class Router
     }
 
     /**
+     * Returns a list of authorized resources
+     *
+     * @param int             $user    Authenticated user id
+     * @param string|string[] $methods Allowed HTTP methods
+     *
+     * @return string[]
+     */
+    protected function getAuthorizedResources(int $user, $methods)
+    {
+        $methods = (array) $methods;
+
+        $resources = Authorization::dump(
+            [
+                'user' => $user,
+                'methods[REGEXP]' => '"' . implode('"|"', $methods) . '"',
+            ],
+            'resource'
+        );
+
+        foreach ($resources as $id => $resource) {
+            $data = $this->resources[$resource] ?? null;
+            $allow = (array) ($data['methods'] ?? null);
+            $allow = (empty($allow))
+                ? $this->implemented_methods
+                : array_intersect($this->implemented_methods, $allow);
+            if ($data === null
+                || empty(array_intersect($allow, $methods))
+                && !$this->isPublic($resource, $methods)
+            ) {
+                unset($resources[$id]);
+            }
+        }
+
+        return $resources;
+    }
+
+    /**
      * Returns Content-Location for a Model in a Resource
      *
      * @param Model    $model    Model to get Location
