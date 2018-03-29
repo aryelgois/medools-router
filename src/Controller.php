@@ -7,6 +7,7 @@
 
 namespace aryelgois\MedoolsRouter;
 
+use aryelgois\Utils\HttpResponse;
 use aryelgois\MedoolsRouter\Exceptions\RouterException;
 
 /**
@@ -42,6 +43,34 @@ class Controller
     ) {
         try {
             $this->router = new Router($url, $resources, $config);
+        } catch (RouterException $e) {
+            $e->getResponse()->output();
+        }
+    }
+
+    /**
+     * Authenticates a Basic Authorization Header
+     *
+     * When successful, a JWT is sent. It must be used for Bearer Authentication
+     * with other routes
+     *
+     * If the authentication is disabled, a 204 response is sent
+     *
+     * @param string $auth Request Authorization Header
+     */
+    public function authenticate(string $auth)
+    {
+        if ($this->router === null) {
+            return;
+        }
+
+        try {
+            $response = $this->router->authenticate($auth, 'Basic');
+            if (!($response instanceof Response)) {
+                $response = new Response;
+                $response->status = HttpResponse::HTTP_NO_CONTENT;
+            }
+            $response->output();
         } catch (RouterException $e) {
             $e->getResponse()->output();
         }
