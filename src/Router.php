@@ -1290,12 +1290,17 @@ class Router
     ) {
         $model->fill($resource->data);
 
-        if ($model->update(array_keys($resource->data))) {
+        $result = $model->update(array_keys($resource->data));
+        if ($result === true) {
             return;
         }
 
         $message = "Resource '" . ($route ?? $resource->route)
             . "' could not be updated";
+
+        if (is_string($result)) {
+            $message .= ": Database failure ($result)";
+        }
 
         $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
     }
