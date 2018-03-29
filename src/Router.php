@@ -831,6 +831,18 @@ class Router
         }
 
         /*
+         * Authorization filter
+         */
+        if ($resource->authorized !== null) {
+            $where = (empty($where))
+                ? $resource->authorized
+                : [
+                    'AND # Requested' => $where,
+                    'AND # Authorized' => $resource->authorized,
+                ];
+        }
+
+        /*
          * Sort query parameter
          */
         $sort = $resource_query['sort'] ?? '';
