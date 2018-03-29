@@ -1167,8 +1167,29 @@ class Router
      */
     protected function requestRoot()
     {
+        $resources = $this->resources;
+
+        if ($this->auth === false) {
+            foreach (array_keys($resources) as $resource) {
+                if (!$this->isPublic($resource)) {
+                    unset($resources[$resource]);
+                }
+            }
+        } elseif ($this->auth instanceof Authentication) {
+            $resources = Utils::arrayWhitelist(
+                $resources,
+                $this->getAuthorizedResources($this->auth->id, ['GET', 'HEAD'])
+            );
+        }
+        if (empty($resources)) {
+            $this->sendError(
+                static::ERROR_UNAUTHORIZED,
+                'You can not access the index'
+            );
+        }
+
         $count = [];
-        foreach (array_keys($this->resources) as $resource) {
+        foreach (array_keys($resources) as $resource) {
             $count[$resource] = $this->countResource($resource);
         }
 
