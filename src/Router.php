@@ -2110,6 +2110,7 @@ class Router
 
             case static::ERROR_UNKNOWN_ERROR:
             default:
+                $actual_code = static::ERROR_UNKNOWN_ERROR;
                 $status = HttpResponse::HTTP_INTERNAL_SERVER_ERROR;
                 $message = 'Unknown error'
                     . (strlen($message) > 0 ? ': ' . $message : '');
@@ -2123,6 +2124,6 @@ class Router
             'message' => $message,
         ];
 
-        throw new RouterException($response);
+        throw new RouterException($response, $actual_code ?? $code);
     }
 }

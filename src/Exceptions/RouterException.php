@@ -29,15 +29,17 @@ class RouterException extends \Exception
      * Creates a new RouterException object
      *
      * @param Response  $response Response with error message
+     * @param int       $code     Error code (Router constant)
      * @param Throwable $previous Previous exception for chaining
      */
     public function __construct(
         Response $response,
+        int $code,
         Throwable $previous = null
     ) {
         $this->response = $response;
 
-        parent::__construct($response->body['message'], 0, $previous);
+        parent::__construct($response->body['message'], $code, $previous);
     }
 
     /**
