@@ -38,6 +38,7 @@ class Router
         'cache_method'          => 'string',
         'default_content_type'  => 'array',
         'default_filters'       => ['array', 'string'],
+        'default_publicity'     => 'boolean',
         'extensions'            => 'array',
         'implemented_methods'   => 'array',
         'meta'                  => 'array',
@@ -113,6 +114,13 @@ class Router
      * @var string|string[]|null
      */
     protected $default_filters;
+
+    /**
+     * Default value for 'public' key in $resources
+     *
+     * @var boolean
+     */
+    protected $default_publicity = false;
 
     /**
      * List of known extensions and their related content type
@@ -220,6 +228,9 @@ class Router
      *                                  requests
      * - 'cache'        boolean         If caching Headers should be sent
      * - 'max_age'      int             Cache-Control max-age (seconds)
+     * - 'public'       mixed           If can be accessed without
+     *                                  authentication, and optionally which
+     *                                  methods are publicly allowed
      *
      * NOTE:
      * - Resource names should be in plural
@@ -1569,6 +1580,33 @@ class Router
             $links[] = '<' . $this->url . $route . '>; rel="' . $rel . '"';
         }
         return implode(', ', $links);
+    }
+
+    /**
+     * Tells if a resource has public access
+     *
+     * @param string          $resource Resource name
+     * @param string|string[] $methods  Which methods to test
+     *                                  Default: GET and HEAD
+     *
+     * @return boolean For success or failure
+     */
+    protected function isPublic(string $resource, $methods = null)
+    {
+        $data = $this->resources[$resource];
+        $allow = (array) ($data['methods'] ?? $this->implemented_methods);
+        $public = $data['public'] ?? $this->default_publicity;
+
+        if (is_string($public)) {
+            $public = [$public];
+        }
+        if (is_array($public)) {
+            $allow = array_intersect($allow, $public);
+        }
+
+        $allow = array_intersect($allow, (array) ($methods ?? ['GET', 'HEAD']));
+
+        return !($public === false || empty($allow));
     }
 
     /**
