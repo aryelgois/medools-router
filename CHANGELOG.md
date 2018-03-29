@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - authentication
 - Dependencies:
   - [aryelgois/yasql-php]
+  - [firebase/php-jwt]
 - [Medools][aryelgois/medools] config file
 - Platform requirement: `ext-zlib`
 
@@ -41,3 +42,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 [aryelgois/medools]: https://github.com/aryelgois/Medools
 [aryelgois/yasql-php]: https://github.com/aryelgois/yasql-php
+[firebase/php-jwt]: https://github.com/firebase/php-jwt
