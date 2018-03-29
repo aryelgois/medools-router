@@ -8,6 +8,7 @@
 namespace aryelgois\MedoolsRouter;
 
 use aryelgois\Utils\Utils;
+use aryelgois\Utils\Format;
 use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Model;
 use aryelgois\MedoolsRouter\Exceptions\RouterException;
@@ -36,6 +37,7 @@ class Router
         'always_expand'         => 'boolean',
         'cache_method'          => 'string',
         'default_content_type'  => 'array',
+        'default_filters'       => ['array', 'string'],
         'extensions'            => 'array',
         'implemented_methods'   => 'array',
         'meta'                  => 'array',
@@ -104,6 +106,13 @@ class Router
             'priority' => 1,
         ],
     ];
+
+    /**
+     * Default value for resources filters
+     *
+     * @var string|string[]|null
+     */
+    protected $default_filters;
 
     /**
      * List of known extensions and their related content type
@@ -287,9 +296,10 @@ class Router
             foreach ($config as $property => $value) {
                 $type = gettype($value);
                 $expected = static::CONFIGURABLE[$property];
-                if ($type !== $expected) {
+                if (!in_array($type, (array) $expected)) {
                     $message = "Config '$property' must be of the type "
-                        . "$expected, $type given";
+                        . Format::naturalLanguageJoin($expected, 'or')
+                        . ", $type given";
                     $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
                 }
                 $this->$property = $value;
@@ -479,7 +489,9 @@ class Router
         /*
          * Filter query parameters
          */
-        $filters = $this->resources[$resource->name]['filters'] ?? [];
+        $filters = $this->resources[$resource->name]['filters']
+            ?? $this->default_filters
+            ?? [];
         if (is_string($filters)) {
             if ($filters === 'ALL') {
                 $filters = $resource->model_class::COLUMNS;
