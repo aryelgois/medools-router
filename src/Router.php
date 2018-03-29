@@ -35,6 +35,7 @@ class Router
     const CONFIGURABLE = [
         'always_cache'          => 'boolean',
         'always_expand'         => 'boolean',
+        'authentication'        => 'array',
         'cache_method'          => 'string',
         'default_content_type'  => 'array',
         'default_filters'       => ['array', 'string'],
@@ -83,6 +84,22 @@ class Router
      * @var boolean
      */
     protected $always_expand = false;
+
+    /**
+     * Contains options for authenticating the request
+     *
+     * If null, the authentication is disabled
+     *
+     * If set, the array contains the keys: (only 'secret' is required)
+     * - 'secret' string  Path to secret used to sign the JWT token
+     * - 'realm'  string  Sent in WWW-Authenticate Header
+     * - 'claims' mixed[] Static JWT claims to be included
+     * - 'alg'    string  Hash algorithm (default: 'HS256')
+     * - 'exp'    int     Expiration duration (seconds)
+     *
+     * @var mixed[]|null
+     */
+    protected $authentication;
 
     /**
      * Function used to hash the Response Body for HTTP Caching
