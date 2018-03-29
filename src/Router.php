@@ -219,6 +219,15 @@ class Router
      */
 
     /**
+     * Request's Authentication
+     *
+     * @var null           Authentication is disabled
+     * @var false          Authorization Header is empty or missing
+     * @var Authentication Request is authenticated
+     */
+    protected $auth;
+
+    /**
      * Router's cache
      *
      * @var mixed[]
@@ -584,6 +593,11 @@ class Router
         array $headers,
         string $body
     ) {
+        $this->auth = $this->authenticate(
+            $headers['Authorization'] ?? '',
+            'Bearer'
+        );
+
         $this->method = strtoupper($method);
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
