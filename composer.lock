@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "27b18a64c739882f4d6ea8cecee351dd",
+    "content-hash": "4bef3578b9377b94a02c9469464bd950",
     "packages": [
         {
             "name": "aryelgois/medools",
@@ -93,6 +93,51 @@
             "time": "2018-03-10T13:03:12+00:00"
         },
         {
+            "name": "aryelgois/yasql-php",
+            "version": "v0.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aryelgois/yasql-php.git",
+                "reference": "683c8e021b44bc17c022a62adf29bb679469342d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aryelgois/yasql-php/zipball/683c8e021b44bc17c022a62adf29bb679469342d",
+                "reference": "683c8e021b44bc17c022a62adf29bb679469342d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0",
+                "symfony/yaml": "^3.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "aryelgois\\YaSql\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Aryel Mota Góis",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A PHP implementation for YAML Ain't SQL",
+            "keywords": [
+                "database",
+                "php",
+                "schema",
+                "sql",
+                "yaml",
+                "yasql"
+            ],
+            "time": "2018-03-26T16:32:29+00:00"
+        },
+        {
             "name": "catfan/medoo",
             "version": "v1.5.6",
             "source": {
@@ -150,6 +195,64 @@
                 "sqlite"
             ],
             "time": "2018-03-26T17:54:24+00:00"
+        },
+        {
+            "name": "symfony/yaml",
+            "version": "v3.4.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/yaml.git",
+                "reference": "6af42631dcf89e9c616242c900d6c52bd53bd1bb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/6af42631dcf89e9c616242c900d6c52bd53bd1bb",
+                "reference": "6af42631dcf89e9c616242c900d6c52bd53bd1bb",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5.9|>=7.0.8"
+            },
+            "conflict": {
+                "symfony/console": "<3.4"
+            },
+            "require-dev": {
+                "symfony/console": "~3.4|~4.0"
+            },
+            "suggest": {
+                "symfony/console": "For validating YAML files using the lint command"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.4-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Yaml\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Yaml Component",
+            "homepage": "https://symfony.com",
+            "time": "2018-02-16T09:50:28+00:00"
         }
     ],
     "packages-dev": [],

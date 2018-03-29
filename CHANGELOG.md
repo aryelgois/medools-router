@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - RouterException
   - Resource
   - Response
+- Dependencies:
+  - [aryelgois/yasql-php]
 - [Medools][aryelgois/medools] config file
 - Platform requirement: `ext-zlib`
 
@@ -34,3 +36,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 [Unreleased]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...develop
 
 [aryelgois/medools]: https://github.com/aryelgois/Medools
+[aryelgois/yasql-php]: https://github.com/aryelgois/yasql-php
