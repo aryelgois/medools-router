@@ -392,9 +392,9 @@ class Router
         $config = array_merge(
             [
                 'secret' => null,
+                'algorithm' => 'HS256',
                 'claims' => [],
                 'expirity' => null,
-                'algorithm' => 'HS256',
                 'verify' => false,
             ],
             $config
