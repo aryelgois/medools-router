@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.0] - 2018-03-31
+
 ### Added
 - Classes:
   - Authentication
@@ -31,16 +33,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update dependencies
 - Namespace to `aryelgois\MedoolsRouter`
 
-### Deprecated
 
-### Removed
-
-### Fixed
-
-### Security
-
-
-[Unreleased]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...develop
+[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.1.0...develop
+[0.1.0]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...v0.1.0
 
 [aryelgois/medools]: https://github.com/aryelgois/Medools
 [aryelgois/yasql-php]: https://github.com/aryelgois/yasql-php
