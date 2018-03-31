@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Dependencies:
   - [aryelgois/yasql-php]
   - [firebase/php-jwt]
+- Documentation
 - Example
 - [Medools][aryelgois/medools] config file
 - Platform requirement: `ext-zlib`
