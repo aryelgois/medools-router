@@ -604,7 +604,11 @@ class Router
             'Bearer'
         );
 
-        $this->method = strtoupper($method);
+        if (strcasecmp($method, 'POST') === 0) {
+            $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
+        }
+        $this->method = strtoupper($actual_method ?? $method);
+
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
             $message = "Method '$this->method' is not implemented. "

@@ -94,18 +94,8 @@ class Controller
             return;
         }
 
-        if (strcasecmp($method, 'POST') === 0) {
-            $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
-        }
-        $actual_method = strtoupper($actual_method ?? $method);
-
         try {
-            $response = $this->router->run(
-                $actual_method,
-                $uri,
-                $headers,
-                $body
-            );
+            $response = $this->router->run($method, $uri, $headers, $body);
             if ($response !== null) {
                 $response->output();
             }
