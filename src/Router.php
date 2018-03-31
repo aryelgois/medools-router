@@ -45,7 +45,7 @@ class Router
         'default_publicity'     => ['boolean', 'array', 'string'],
         'extensions'            => 'array',
         'implemented_methods'   => 'array',
-        'meta'                  => 'array',
+        'meta'                  => ['array', 'NULL'],
         'per_page'              => 'integer',
         'primary_key_separator' => 'string',
         'zlib_compression'      => 'boolean',
@@ -180,7 +180,7 @@ class Router
      *
      * Returned when requesting route '/'
      *
-     * @var mixed[]
+     * @var mixed[]|null
      */
     protected $meta = [
         'version' => 'v0.1.0',
@@ -1185,7 +1185,8 @@ class Router
     /**
      * When requested route is '/'
      *
-     * @return Response With $this->meta and a row count for each resource
+     * @return Response With $meta and a row count for each resource. If $meta
+     *                  is empty, only the resource count is included
      */
     protected function requestRoot()
     {
@@ -1217,12 +1218,9 @@ class Router
 
         $response = $this->prepareResponse();
         $response->headers['Content-Type'] = 'application/json';
-        $response->body = array_merge(
-            $this->meta,
-            [
-                'resources' => $count,
-            ]
-        );
+        $response->body = (empty($this->meta))
+            ? $count
+            : array_merge($this->meta, ['resources' => $count]);
 
         return $response;
     }
