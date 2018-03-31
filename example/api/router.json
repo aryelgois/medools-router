@@ -1,0 +1,10 @@
+{
+    "configurations": {
+        "always_expand": true,
+        "default_filters": "AUTO_INCREMENT",
+        "per_page": 5
+    },
+    "resources": {
+        "people": "aryelgois\\Medools\\Models\\Person"
+    }
+}

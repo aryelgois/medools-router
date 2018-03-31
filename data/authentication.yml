@@ -1,0 +1,33 @@
+database:
+  name: authentication
+  project: aryelgois/medools-router
+  license: MIT
+
+definitions:
+  pk: int PRIMARY KEY
+  pk_auto: pk AUTO_INCREMENT
+  name: varchar(60)
+  json: varchar(200)
+  password: varchar(255) COLLATE ascii_bin
+  boolean: tinyint(1)
+  insertstamp: timestamp DEFAULT CURRENT_TIMESTAMP
+
+tables:
+  authentications:
+    id: pk_auto
+    username: name UNIQUE
+    password: password
+    email: name UNIQUE
+    verified: boolean DEFAULT '0'
+    enabled: boolean DEFAULT '1'
+    update: timestamp
+    stamp: insertstamp
+
+  authorizations:
+    user: int -> authentications.id
+    resource: name
+    methods: json NULLABLE
+    filter: json NULLABLE
+
+composite:
+  - PRIMARY authorizations user resource
