@@ -619,8 +619,8 @@ class Router
 
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
-            $message = "Method '$this->method' is not implemented. "
-                . 'Please use: ' . implode(', ', $allow);
+            $message = "Method '$this->method' is not implemented. Please use: "
+                . Format::naturalLanguageJoin($allow, 'or');
             $this->sendError(
                 static::ERROR_METHOD_NOT_IMPLEMENTED,
                 $message,
@@ -654,8 +654,8 @@ class Router
                     array_merge($methods, ['OPTIONS'])
                 );
                 if (!in_array($this->method, $allow)) {
-                    $message = "Method '$this->method' is not allowed. "
-                        . 'Please use: ' . implode(', ', $allow);
+                    $message = "Method '$this->method' is not allowed. Please "
+                        . 'use: ' . Format::naturalLanguageJoin($allow, 'or');
                     $this->sendError(
                         static::ERROR_METHOD_NOT_ALLOWED,
                         $message,
