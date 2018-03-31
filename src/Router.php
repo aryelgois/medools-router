@@ -1404,8 +1404,7 @@ class Router
             $id = $route[$i + 1] ?? null;
             $is_last = ($route[$i + 2] ?? null) === null;
 
-            if ($this->auth !== null
-                && !$this->isPublic(
+            if (!$this->isPublic(
                     $resource,
                     ($is_last ? $this->method : null)
                 )
@@ -1434,7 +1433,7 @@ class Router
                         }
                     }
                 }
-                if ($code !== null) {
+                if (isset($code)) {
                     $this->sendError($code, "You can not access '$resource'");
                 }
             }
