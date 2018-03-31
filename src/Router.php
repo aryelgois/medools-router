@@ -94,10 +94,10 @@ class Router
      * If null, the authentication is disabled
      *
      * If set, the array contains the keys: (only 'secret' is required)
-     * - 'secret'    string  Path to secret used to sign the JWT token
+     * - 'secret'    string  Path to secret used to sign the JWT tokens
      * - 'realm'     string  Sent in WWW-Authenticate Header
-     * - 'claims'    mixed[] Static JWT claims to be included
      * - 'algorithm' string  Hash algorithm (default: 'HS256')
+     * - 'claims'    mixed[] Static JWT claims to be included in every token
      * - 'expirity'  int     Expiration duration (seconds)
      *
      * @var mixed[]|null
@@ -119,7 +119,7 @@ class Router
     /**
      * List of HTTP methods implemented
      *
-     * @var float[]
+     * @var mixed[]
      */
     protected $default_content_type = [
         'application/json' => [
@@ -138,23 +138,22 @@ class Router
     /**
      * Default value for 'public' key in $resources
      *
-     * @var false  All resources are private by default. Only has effect if
-     *             $authentication is not null
-     * @var true   All resources are public by default. Has the same effect as
-     *             $authentication = null. If it is not null, is useful to make
-     *             most resources public and some private
-     * @var array  List of methods that are always public
-     * @var string The same as array with one item
+     * @var false    All resources are private by default. Only has effect if
+     *               $authentication is not null
+     * @var true     All resources are public by default. Has the same effect as
+     *               $authentication = null. If it is not null, is useful to
+     *               make most resources public and some private
+     * @var string[] List of methods that are always public
+     * @var string   The same as an array with one item
      */
     protected $default_publicity = false;
 
     /**
-     * List of known extensions and their related content type
+     * Map of known extensions and their related content type
      *
      * Useful to ensure browser explorability via address bar
      *
-     * It is intended to be configured in __construct() for custom content types
-     * your resources use.
+     * Fill it with extensions for custom content types your resources use
      *
      * @var string[]
      */
@@ -306,9 +305,9 @@ class Router
     /**
      * Creates a new Router object
      *
-     * @param string $url       Router URL
-     * @param array  $resources List of resources available
-     * @param array  $config    Configurations for the Router @see CONFIGURABLE
+     * @param string  $url       Router URL
+     * @param mixed[] $resources List of resources available
+     * @param mixed[] $config    Configurations for the Router @see CONFIGURABLE
      *
      * @throws RouterException If any $resource does not define a Model class
      * @throws RouterException If any $config key is invalid
@@ -1237,7 +1236,7 @@ class Router
      * - If $resource does not comply to $accept, but it does not forbid any of
      *   $resource's content types (i.e. ';q=0'), this function returns the
      *   first $resource's content type with highest priority. It is better to
-     *   return something the user doesn't complain about than a useless error
+     *   return something the client doesn't complain about than a useless error
      *
      * @param string $resource Resource name
      * @param string $accept   Request Accept
