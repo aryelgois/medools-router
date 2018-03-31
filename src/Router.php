@@ -99,6 +99,7 @@ class Router
      * - 'algorithm' string  Hash algorithm (default: 'HS256')
      * - 'claims'    mixed[] Static JWT claims to be included in every token
      * - 'expirity'  int     Expiration duration (seconds)
+     * - 'verify'    boolean If the authentication's email must be verified
      *
      * @var mixed[]|null
      */
@@ -394,6 +395,7 @@ class Router
                 'claims' => [],
                 'expirity' => null,
                 'algorithm' => 'HS256',
+                'verify' => false,
             ],
             $config
         );
@@ -490,6 +492,13 @@ class Router
                     $this->sendError(
                         static::ERROR_UNAUTHENTICATED,
                         'Account is disabled'
+                    );
+                }
+
+                if ($config['verify'] && !$authentication->verified) {
+                    $this->sendError(
+                        static::ERROR_UNAUTHENTICATED,
+                        'Email is not verified'
                     );
                 }
 
