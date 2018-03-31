@@ -1965,6 +1965,10 @@ class Router
      */
     protected function isPublic(string $resource, $methods = null)
     {
+        if (($this->authentication ?? null) === null) {
+            return true;
+        }
+
         $data = $this->resources[$resource];
         $allow = (array) ($data['methods'] ?? $this->implemented_methods);
         $public = $data['public'] ?? $this->default_publicity;
