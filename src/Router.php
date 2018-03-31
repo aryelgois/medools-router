@@ -11,6 +11,12 @@ use aryelgois\Utils\Utils;
 use aryelgois\Utils\Format;
 use aryelgois\Utils\HttpResponse;
 use aryelgois\Medools\Model;
+use aryelgois\Medools\Exceptions\{
+    ForeignConstraintException,
+    MissingColumnException,
+    ReadOnlyModelException,
+    UnknownColumnException
+};
 use aryelgois\MedoolsRouter\Exceptions\RouterException;
 use aryelgois\MedoolsRouter\Models\Authentication;
 use aryelgois\MedoolsRouter\Models\Authorization;
@@ -297,6 +303,8 @@ class Router
     const ERROR_NOT_ACCEPTABLE = 15;
     const ERROR_INVALID_QUERY_PARAMETER = 16;
     const ERROR_UNKNOWN_FIELDS = 17;
+    const ERROR_READONLY_RESOURCE = 18;
+    const ERROR_FOREIGN_CONSTRAINT = 19;
 
     /*
      * Basic methods
@@ -712,9 +720,27 @@ class Router
                     $resource_obj->$key = $value;
                 }
 
-                $response = ($resource_obj->kind === 'collection')
-                    ? $this->requestCollection($resource_obj)
-                    : $this->requestResource($resource_obj);
+                try {
+                    $response = ($resource_obj->kind === 'collection')
+                        ? $this->requestCollection($resource_obj)
+                        : $this->requestResource($resource_obj);
+                } catch (RouterException $e) {
+                    throw $e;
+                } catch (ForeignConstraintException $e) {
+                    $code = static::ERROR_FOREIGN_CONSTRAINT;
+                } catch (MissingColumnException $e) {
+                    $code = static::ERROR_INVALID_PAYLOAD;
+                } catch (ReadOnlyModelException $e) {
+                    $code = static::ERROR_READONLY_RESOURCE;
+                } catch (UnknownColumnException $e) {
+                    $code = static::ERROR_UNKNOWN_FIELDS;
+                } catch (\Exception $e) {
+                    $code = static::ERROR_INTERNAL_SERVER;
+                } finally {
+                    if (isset($code)) {
+                        $this->sendError($code, $e->getMessage());
+                    }
+                }
 
                 $content_location = $resource_obj->content_location;
                 if ($content_location !== null) {
@@ -2108,6 +2134,8 @@ class Router
             case static::ERROR_INVALID_PAYLOAD:
             case static::ERROR_INVALID_QUERY_PARAMETER:
             case static::ERROR_UNKNOWN_FIELDS:
+            case static::ERROR_READONLY_RESOURCE:
+            case static::ERROR_FOREIGN_CONSTRAINT:
                 $status = HttpResponse::HTTP_BAD_REQUEST;
                 break;
 
