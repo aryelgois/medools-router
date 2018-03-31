@@ -94,11 +94,11 @@ class Router
      * If null, the authentication is disabled
      *
      * If set, the array contains the keys: (only 'secret' is required)
-     * - 'secret' string  Path to secret used to sign the JWT token
-     * - 'realm'  string  Sent in WWW-Authenticate Header
-     * - 'claims' mixed[] Static JWT claims to be included
-     * - 'alg'    string  Hash algorithm (default: 'HS256')
-     * - 'exp'    int     Expiration duration (seconds)
+     * - 'secret'    string  Path to secret used to sign the JWT token
+     * - 'realm'     string  Sent in WWW-Authenticate Header
+     * - 'claims'    mixed[] Static JWT claims to be included
+     * - 'algorithm' string  Hash algorithm (default: 'HS256')
+     * - 'expirity'  int     Expiration duration (seconds)
      *
      * @var mixed[]|null
      */
@@ -393,8 +393,8 @@ class Router
             [
                 'secret' => null,
                 'claims' => [],
-                'exp' => null,
-                'alg' => 'HS256',
+                'expirity' => null,
+                'algorithm' => 'HS256',
             ],
             $config
         );
@@ -438,9 +438,9 @@ class Router
                 );
             }
             foreach ($files as $file) {
-                $exp = basename($file);
-                if ($exp > $stamp) {
-                    $secret_exp = (int) $exp;
+                $expirity = basename($file);
+                if ($expirity > $stamp) {
+                    $secret_exp = (int) $expirity;
                     break;
                 }
             }
@@ -503,16 +503,16 @@ class Router
                     ]
                 );
 
-                $exp = $config['exp'];
-                if ($exp === null) {
+                $expirity = $config['expirity'];
+                if ($expirity === null) {
                     if ($secret_exp !== null) {
                         $token['exp'] = $secret_exp;
                     }
                 } else {
-                    $exp += $stamp;
+                    $expirity += $stamp;
                     $token['exp'] = ($secret_exp !== null)
-                        ? min($exp, $secret_exp)
-                        : $exp;
+                        ? min($expirity, $secret_exp)
+                        : $expirity;
                 }
 
                 $response = $this->prepareResponse();
@@ -522,7 +522,7 @@ class Router
                     $response->body = JWT::encode(
                         $token,
                         $secret,
-                        $config['alg']
+                        $config['algorithm']
                     );
                 } catch (\Exception $e) {
                     $this->sendError(
@@ -539,7 +539,7 @@ class Router
                     $token = JWT::decode(
                         $credentials,
                         $secret,
-                        [$config['alg']]
+                        [$config['algorithm']]
                     );
                 } catch (\Exception $e) {
                     $this->sendError(
