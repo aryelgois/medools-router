@@ -42,7 +42,7 @@ class Router
         'cache_method'          => 'string',
         'default_content_type'  => 'array',
         'default_filters'       => ['array', 'string'],
-        'default_publicity'     => 'boolean',
+        'default_publicity'     => ['boolean', 'array', 'string'],
         'extensions'            => 'array',
         'implemented_methods'   => 'array',
         'meta'                  => 'array',
@@ -138,7 +138,13 @@ class Router
     /**
      * Default value for 'public' key in $resources
      *
-     * @var boolean
+     * @var false  All resources are private by default. Only has effect if
+     *             $authentication is not null
+     * @var true   All resources are public by default. Has the same effect as
+     *             $authentication = null. If it is not null, is useful to make
+     *             most resources public and some private
+     * @var array  List of methods that are always public
+     * @var string The same as array with one item
      */
     protected $default_publicity = false;
 
