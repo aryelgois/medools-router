@@ -100,12 +100,12 @@ class Router
      * If null, the authentication is disabled
      *
      * If set, the array contains the keys: (only 'secret' is required)
-     * - 'secret'    string  Path to secret used to sign the JWT tokens
-     * - 'realm'     string  Sent in WWW-Authenticate Header
-     * - 'algorithm' string  Hash algorithm (default: 'HS256')
-     * - 'claims'    mixed[] Static JWT claims to be included in every token
-     * - 'expirity'  int     Expiration duration (seconds)
-     * - 'verify'    boolean If the authentication's email must be verified
+     * - 'secret'     string  Path to secret used to sign the JWT tokens
+     * - 'realm'      string  Sent in WWW-Authenticate Header
+     * - 'algorithm'  string  Hash algorithm (default: 'HS256')
+     * - 'claims'     mixed[] Static JWT claims to be included in every token
+     * - 'expiration' int     Expiration duration (seconds)
+     * - 'verify'     boolean If the authentication's email must be verified
      *
      * @var mixed[]|null
      */
@@ -402,7 +402,7 @@ class Router
                 'secret' => null,
                 'algorithm' => 'HS256',
                 'claims' => [],
-                'expirity' => null,
+                'expiration' => null,
                 'verify' => false,
             ],
             $config
@@ -447,9 +447,9 @@ class Router
                 );
             }
             foreach ($files as $file) {
-                $expirity = basename($file);
-                if ($expirity > $stamp) {
-                    $secret_exp = (int) $expirity;
+                $expiration = basename($file);
+                if ($expiration > $stamp) {
+                    $secret_exp = (int) $expiration;
                     break;
                 }
             }
@@ -519,16 +519,16 @@ class Router
                     ]
                 );
 
-                $expirity = $config['expirity'];
-                if ($expirity === null) {
+                $expiration = $config['expiration'];
+                if ($expiration === null) {
                     if ($secret_exp !== null) {
                         $token['exp'] = $secret_exp;
                     }
                 } else {
-                    $expirity += $stamp;
+                    $expiration += $stamp;
                     $token['exp'] = ($secret_exp !== null)
-                        ? min($expirity, $secret_exp)
-                        : $expirity;
+                        ? min($expiration, $secret_exp)
+                        : $expiration;
                 }
 
                 $response = $this->prepareResponse();
