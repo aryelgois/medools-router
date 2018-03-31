@@ -352,8 +352,8 @@ class Router
             }
             foreach ($config as $property => $value) {
                 $type = gettype($value);
-                $expected = static::CONFIGURABLE[$property];
-                if (!in_array($type, (array) $expected)) {
+                $expected = (array) static::CONFIGURABLE[$property];
+                if (!in_array($type, $expected)) {
                     $message = "Config '$property' must be of the type "
                         . Format::naturalLanguageJoin($expected, 'or')
                         . ", $type given";
