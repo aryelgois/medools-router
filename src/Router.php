@@ -1417,11 +1417,8 @@ class Router
                     ($is_last ? $this->method : null)
                 )
             ) {
-                if ($this->auth === false) {
-                    $code = static::ERROR_UNAUTHENTICATED;
-                } elseif ($this->auth instanceof Authentication) {
-                    $code = static::ERROR_UNAUTHORIZED;
-
+                $code = static::ERROR_UNAUTHORIZED;
+                if ($this->auth instanceof Authentication) {
                     $authorization = Authorization::getInstance([
                         'user' => $this->auth->id,
                         'resource' => $resource,
