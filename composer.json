@@ -1,6 +1,6 @@
 {
     "name": "aryelgois/medools-router",
-    "description": "A Router class to bootstrap RESTful APIs based on aryelgois/medools",
+    "description": "A Router framework to bootstrap RESTful APIs based on aryelgois/Medools",
     "keywords": ["Medools", "RESTful", "API"],
     "license": "MIT",
     "authors": [
