@@ -1433,10 +1433,13 @@ class Router
                     ]);
 
                     if ($authorization !== null) {
-                        $allow = in_array(
-                            ($is_last ? $this->method : 'GET'),
-                            json_decode($authorization->methods, true)
-                        );
+                        $methods = $authorization->methods;
+                        $allow = $methods === null
+                            || in_array(
+                                ($is_last ? $this->method : 'GET'),
+                                json_decode($methods, true)
+                            );
+
                         if ($allow) {
                             $code = null;
                             $authorized = $authorization->filter ?? null;
@@ -1863,7 +1866,10 @@ class Router
         $resources = Authorization::dump(
             [
                 'user' => $user,
-                'methods[REGEXP]' => '"' . implode('"|"', $methods) . '"',
+                'OR' => [
+                    'methods' => null,
+                    'methods[REGEXP]' => '"' . implode('"|"', $methods) . '"',
+                ],
             ],
             'resource'
         );
