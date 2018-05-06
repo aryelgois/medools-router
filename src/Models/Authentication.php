@@ -91,7 +91,7 @@ class Authentication extends Medools\Model
      */
     protected function onColumnChange($column, $value)
     {
-        if ($column == 'password') {
+        if ($column === 'password') {
             $value = static::hashPassword($value);
         }
 
