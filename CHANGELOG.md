@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Repository title
 
 ### Changed
+- Use `class` keyword in foreign classes
 
 ### Deprecated
 

@@ -42,7 +42,7 @@ class Authorization extends Medools\Model
 
     const FOREIGN_KEYS = [
         'user' => [
-            __NAMESPACE__ . '\\Authentication',
+            Authentication::class,
             'id'
         ],
     ];
