@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Repository title
+- `from_globals()`
 
 ### Changed
 - Use `class` keyword in foreign classes
