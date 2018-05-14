@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Comparison operator
 - README
 - Example README
+- External handler output
 
 ### Security
 

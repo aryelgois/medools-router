@@ -991,6 +991,7 @@ class Router
                             ob_end_clean();
                         } else {
                             $handler($resource);
+                            ob_flush();
                         }
                         return;
                     } else {
@@ -1116,6 +1117,7 @@ class Router
                             ob_end_clean();
                         } else {
                             $handler($resource);
+                            ob_flush();
                         }
                         return;
                     } else {
