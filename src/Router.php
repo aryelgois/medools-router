@@ -32,6 +32,32 @@ use Firebase\JWT\JWT;
 class Router
 {
     /*
+     * Errors
+     * =========================================================================
+     */
+
+    const ERROR_UNKNOWN_ERROR = 0;
+    const ERROR_INTERNAL_SERVER = 1;
+    const ERROR_INVALID_CREDENTIALS = 2;
+    const ERROR_UNAUTHENTICATED = 3;
+    const ERROR_INVALID_TOKEN = 4;
+    const ERROR_METHOD_NOT_IMPLEMENTED = 5;
+    const ERROR_UNAUTHORIZED = 6;
+    const ERROR_INVALID_RESOURCE = 7;
+    const ERROR_INVALID_RESOURCE_ID = 8;
+    const ERROR_INVALID_RESOURCE_OFFSET = 9;
+    const ERROR_INVALID_RESOURCE_FOREIGN = 10;
+    const ERROR_RESOURCE_NOT_FOUND = 11;
+    const ERROR_UNSUPPORTED_MEDIA_TYPE = 12;
+    const ERROR_INVALID_PAYLOAD = 13;
+    const ERROR_METHOD_NOT_ALLOWED = 14;
+    const ERROR_NOT_ACCEPTABLE = 15;
+    const ERROR_INVALID_QUERY_PARAMETER = 16;
+    const ERROR_UNKNOWN_FIELDS = 17;
+    const ERROR_READONLY_RESOURCE = 18;
+    const ERROR_FOREIGN_CONSTRAINT = 19;
+
+    /*
      * Router configurations
      * =========================================================================
      */
@@ -279,32 +305,6 @@ class Router
      * @var mixed[]
      */
     protected $resources = [];
-
-    /*
-     * Errors
-     * =========================================================================
-     */
-
-    const ERROR_UNKNOWN_ERROR = 0;
-    const ERROR_INTERNAL_SERVER = 1;
-    const ERROR_INVALID_CREDENTIALS = 2;
-    const ERROR_UNAUTHENTICATED = 3;
-    const ERROR_INVALID_TOKEN = 4;
-    const ERROR_METHOD_NOT_IMPLEMENTED = 5;
-    const ERROR_UNAUTHORIZED = 6;
-    const ERROR_INVALID_RESOURCE = 7;
-    const ERROR_INVALID_RESOURCE_ID = 8;
-    const ERROR_INVALID_RESOURCE_OFFSET = 9;
-    const ERROR_INVALID_RESOURCE_FOREIGN = 10;
-    const ERROR_RESOURCE_NOT_FOUND = 11;
-    const ERROR_UNSUPPORTED_MEDIA_TYPE = 12;
-    const ERROR_INVALID_PAYLOAD = 13;
-    const ERROR_METHOD_NOT_ALLOWED = 14;
-    const ERROR_NOT_ACCEPTABLE = 15;
-    const ERROR_INVALID_QUERY_PARAMETER = 16;
-    const ERROR_UNKNOWN_FIELDS = 17;
-    const ERROR_READONLY_RESOURCE = 18;
-    const ERROR_FOREIGN_CONSTRAINT = 19;
 
     /*
      * Basic methods
