@@ -1918,43 +1918,53 @@ class Router
     }
 
     /**
-     * Returns a list of authorized resources
+     * Returns a list of authorized resources for the authenticated user
      *
-     * @param int             $user    Authenticated user id
-     * @param string|string[] $methods Allowed HTTP methods
+     * @param string|string[] $methods Which methods to test
+     *                                 Default is requested method
      *
      * @return string[]
      */
-    protected function getAuthorizedResources(int $user, $methods)
+    protected function getAuthorizedResources($methods = null)
     {
-        $methods = (array) $methods;
+        if ($this->auth instanceof Authentication) {
+            $allow = (array) ($methods ?? $this->method);
 
-        $resources = Authorization::dump(
-            [
-                'user' => $user,
-                'OR' => [
-                    'methods' => null,
-                    'methods[REGEXP]' => '"' . implode('"|"', $methods) . '"',
+            $resources = Authorization::dump(
+                [
+                    'user' => $this->auth->id,
+                    'OR' => [
+                        'methods' => null,
+                        'methods[REGEXP]' => '"' . implode('"|"', $allow) . '"',
+                    ],
                 ],
-            ],
-            'resource'
-        );
+                'resource'
+            );
 
-        foreach ($resources as $id => $resource) {
-            $data = $this->resources[$resource] ?? null;
-            $allow = (array) ($data['methods'] ?? null);
-            $allow = (empty($allow))
-                ? $this->implemented_methods
-                : array_intersect($this->implemented_methods, $allow);
-            if ($data === null
-                || empty(array_intersect($allow, $methods))
-                && !$this->isPublic($resource, $methods)
-            ) {
-                unset($resources[$id]);
+            foreach ($resources as $id => $resource) {
+                if (!array_key_exists($resource, $this->resources)
+                    || empty(array_intersect(
+                        $this->getAllowedMethods($resource),
+                        $allow
+                    ))
+                    && !$this->isPublic($resource, $methods)
+                ) {
+                    unset($resources[$id]);
+                }
+            }
+        } else {
+            $resources = array_keys($this->resources);
+
+            if ($this->auth === false) {
+                foreach ($resources as $id => $resource) {
+                    if (!$this->isPublic($resource, $methods)) {
+                        unset($resources[$id]);
+                    }
+                }
             }
         }
 
-        return $resources;
+        return array_values($resources);
     }
 
     /**
