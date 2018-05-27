@@ -2043,7 +2043,7 @@ class Router
      *
      * @param string          $resource Resource name
      * @param string|string[] $methods  Which methods to test
-     *                                  Default: GET and HEAD
+     *                                  Default is requested method
      *
      * @return boolean For success or failure
      */
@@ -2053,18 +2053,22 @@ class Router
             return true;
         }
 
-        $data = $this->resources[$resource];
-        $allow = (array) ($data['methods'] ?? $this->implemented_methods);
-        $public = $data['public'] ?? $this->default_publicity;
+        $resource_data = $this->resources[$resource] ?? null;
+        if ($resource_data === null) {
+            return false;
+        }
 
+        $public = $resource_data['public'] ?? $this->default_publicity;
         if (is_string($public)) {
             $public = [$public];
         }
+
+        $allow = $this->getAllowedMethods($resource);
         if (is_array($public)) {
             $allow = array_intersect($allow, $public);
         }
 
-        $allow = array_intersect($allow, (array) ($methods ?? ['GET', 'HEAD']));
+        $allow = array_intersect($allow, (array) ($methods ?? $this->method));
 
         return !($public === false || empty($allow));
     }
