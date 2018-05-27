@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use `class` keyword in foreign classes
 - Update `Router::isPublic()`
 - Rewrite `Router::getAuthorizedResources()`
+- Update `Router::requestRoot()`
 
 ### Deprecated
 

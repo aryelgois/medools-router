@@ -1226,20 +1226,11 @@ class Router
      */
     protected function requestRoot()
     {
-        $resources = $this->resources;
+        $resources = Utils::arrayWhitelist(
+            $this->resources,
+            $this->getAuthorizedResources()
+        );
 
-        if ($this->auth === false) {
-            foreach (array_keys($resources) as $resource) {
-                if (!$this->isPublic($resource)) {
-                    unset($resources[$resource]);
-                }
-            }
-        } elseif ($this->auth instanceof Authentication) {
-            $resources = Utils::arrayWhitelist(
-                $resources,
-                $this->getAuthorizedResources($this->auth->id, ['GET', 'HEAD'])
-            );
-        }
         if (empty($resources)) {
             $this->sendError(
                 static::ERROR_UNAUTHORIZED,
