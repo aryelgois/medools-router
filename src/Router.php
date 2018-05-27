@@ -1880,6 +1880,44 @@ class Router
     }
 
     /**
+     * Returns a list of allowed methods for a resource
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param string $resource Resource name
+     *
+     * @return string[]
+     *
+     * @throws \DomainException If $resource is invalid
+     */
+    protected function getAllowedMethods(string $resource)
+    {
+        $cached = $this->cache['allowed_methods'][$resource] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $resource_data = $this->resources[$resource] ?? null;
+        if ($resource_data === null) {
+            throw new \DomainException("Invalid resource '$resource'");
+        }
+
+        $allow = $this->implemented_methods;
+
+        $methods = (array) ($resource_data['methods'] ?? null);
+        if (!empty($methods)) {
+            $allow = array_intersect(
+                $allow,
+                array_merge($methods, ['OPTIONS'])
+            );
+        }
+
+        $this->cache['allowed_methods'][$resource] = $allow;
+        return $allow;
+    }
+
+    /**
      * Returns a list of authorized resources
      *
      * @param int             $user    Authenticated user id
