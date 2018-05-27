@@ -107,6 +107,19 @@ class Router
     ];
 
     /**
+     * List of safe HTTP methods
+     *
+     * NOTE:
+     * - OPTIONS would be here, but it is treated as a special method
+     *
+     * @const string[]
+     */
+    const SAFE_METHODS = [
+        'GET',
+        'HEAD',
+    ];
+
+    /**
      * If GET and HEAD requests always check cache headers
      *
      * @var boolean
@@ -635,7 +648,7 @@ class Router
                 $allow
             );
         }
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+        $safe_method = in_array($this->method, static::SAFE_METHODS);
 
         $resource = $this->parseRoute($uri);
         $response = null;
@@ -793,7 +806,7 @@ class Router
         $response = $this->prepareResponse();
 
         $where = $resource->where;
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
+        $safe_method = in_array($this->method, static::SAFE_METHODS);
         $resource_query = $resource->query;
         $fields = $this->parseFields($resource);
         $has_fields = ($resource->query['fields'] ?? '') !== '';
@@ -1441,7 +1454,7 @@ class Router
 
             if (!$this->isPublic(
                     $resource,
-                    ($is_last ? $this->method : null)
+                    ($is_last ? $this->method : static::SAFE_METHODS)
                 )
             ) {
                 $code = static::ERROR_UNAUTHORIZED;
