@@ -1466,18 +1466,16 @@ class Router
 
                     if ($authorization !== null) {
                         $methods = $authorization->methods;
-                        $allow = $methods === null
+                        $allowed = $methods === null
                             || in_array(
                                 ($is_last ? $this->method : 'GET'),
                                 json_decode($methods, true)
                             );
 
-                        if ($allow) {
+                        if ($allowed) {
                             $code = null;
-                            $authorized = $authorization->filter ?? null;
-                            if ($authorized !== null) {
-                                $authorized = json_decode($authorized, true);
-                            }
+                            $filter = $authorization->filter;
+                            $authorized = json_decode($filter, true);
                         }
                     }
                 }
