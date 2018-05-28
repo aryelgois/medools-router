@@ -2075,14 +2075,11 @@ class Router
             $public = [$public];
         }
 
-        $allow = $this->getAllowedMethods($resource);
-        if (is_array($public)) {
-            $allow = array_intersect($allow, $public);
-        }
+        $methods = (array) ($methods ?? $this->method);
 
-        $allow = array_intersect($allow, (array) ($methods ?? $this->method));
-
-        return !($public === false || empty($allow));
+        return (is_array($public))
+            ? !empty(array_intersect($public, $methods))
+            : (bool) $public;
     }
 
     /**
