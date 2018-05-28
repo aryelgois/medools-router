@@ -1239,9 +1239,11 @@ class Router
      */
     protected function requestRoot()
     {
+        $authorization = $this->getAuthorizedResources();
+
         $resources = Utils::arrayWhitelist(
             $this->resources,
-            $this->getAuthorizedResources()
+            array_keys($authorization)
         );
 
         if (empty($resources)) {
@@ -1253,7 +1255,10 @@ class Router
 
         $count = [];
         foreach (array_keys($resources) as $resource) {
-            $count[$resource] = $this->countResource($resource);
+            $count[$resource] = $this->countResource(
+                $resource,
+                $authorization[$resource]
+            );
         }
 
         $response = $this->prepareResponse();
@@ -1920,38 +1925,45 @@ class Router
     }
 
     /**
-     * Returns a list of authorized resources for the authenticated user
+     * Returns authorized resources for the authenticated user and their filters
      *
      * @param string|string[] $methods Which methods to test
      *                                 Default is requested method
      *
-     * @return string[]
+     * @return mixed[] With 'resource' => filter
      */
     protected function getAuthorizedResources($methods = null)
     {
+        $resources = [];
+
         if ($this->auth instanceof Authentication) {
             $allow = (array) ($methods ?? $this->method);
 
-            $resources = Authorization::dump(
+            $authorizations = Authorization::dump(
                 [
                     'user' => $this->auth->id,
-                    'OR' => [
-                        'methods' => null,
-                        'methods[REGEXP]' => '"' . implode('"|"', $allow) . '"',
-                    ],
                 ],
-                'resource'
+                [
+                    'resource',
+                    'methods',
+                    'filter',
+                ]
             );
 
-            foreach ($resources as $id => $resource) {
-                if (!array_key_exists($resource, $this->resources)
-                    || empty(array_intersect(
+            foreach ($authorizations as $authorization) {
+                $resource = $authorization['resource'];
+                if (array_key_exists($resource, $this->resources)) {
+                    if ($this->isPublic($resource, $methods)) {
+                        $resources[$resource] = null;
+                    } elseif (!empty(array_intersect(
                         $this->getAllowedMethods($resource),
-                        $allow
-                    ))
-                    && !$this->isPublic($resource, $methods)
-                ) {
-                    unset($resources[$id]);
+                        array_merge(
+                            $authorization['methods'] ?? [],
+                            $allow
+                        )
+                    ))) {
+                        $resources[$resource] = $authorization['filter'];
+                    }
                 }
             }
         } else {
@@ -1964,9 +1976,11 @@ class Router
                     }
                 }
             }
+
+            $resources = array_fill_keys(array_values($resources), null);
         }
 
-        return array_values($resources);
+        return $resources;
     }
 
     /**
