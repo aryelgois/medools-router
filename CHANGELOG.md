@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `from_globals()`
 - `Router::getAllowedMethods()`
 - `Router::SAFE_METHODS`
+- Column types in Authorization
 
 ### Changed
 - Update dependencies
