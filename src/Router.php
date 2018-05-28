@@ -436,7 +436,7 @@ class Router
             }
             $this->sendError(
                 static::ERROR_INTERNAL_SERVER,
-                'Invalid Authorization type'
+                "Invalid Authorization type: '$type'"
             );
         }
 
@@ -487,7 +487,7 @@ class Router
         if ($type !== $type_h) {
             $this->sendError(
                 static::ERROR_INVALID_CREDENTIALS,
-                'Invalid Authorization type'
+                "Invalid Authorization type in header: '$type_h'"
             );
         }
 
@@ -601,7 +601,7 @@ class Router
 
         $this->sendError(
             static::ERROR_INTERNAL_SERVER,
-            'Invalid Authorization type'
+            "Invalid Authorization type: '$type'"
         );
     }
 

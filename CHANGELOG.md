@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - README
 - Example README
 - External handler output
+- Authentication's invalid type error message
 
 ### Security
 
