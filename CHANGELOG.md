@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Router::SAFE_METHODS`
 
 ### Changed
+- Update dependencies
 - Use `class` keyword in foreign classes
 - Update `Router::isPublic()`
 - Rewrite `Router::getAuthorizedResources()`

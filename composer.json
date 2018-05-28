@@ -14,7 +14,7 @@
         "ext-zlib": "*",
         "aryelgois/utils": "^0.5",
         "aryelgois/medools": "^5.0",
-        "aryelgois/yasql-php": "^0.5.0",
+        "aryelgois/yasql-php": "^0.6.0",
         "firebase/php-jwt": "^5.0"
     },
     "autoload": {
