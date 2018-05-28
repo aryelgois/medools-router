@@ -10,7 +10,7 @@ namespace aryelgois\MedoolsRouter\Models;
 use aryelgois\Medools;
 
 /**
- * Provides Basic Authentication
+ * Provides simple Authentication
  *
  * @author Aryel Mota Góis
  * @license MIT

@@ -20,7 +20,7 @@ use aryelgois\Medools\Exceptions\UnknownColumnException;
 class Resource
 {
     /**
-     * Key for Router->resources
+     * Key for Router->$resources
      *
      * @var string
      */
@@ -41,7 +41,7 @@ class Resource
     public $model_class;
 
     /**
-     * For loading or dumping model_class
+     * For loading or dumping $model_class
      *
      * @var array
      */

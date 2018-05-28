@@ -163,7 +163,7 @@ class Router
     protected $cache_method = 'md5';
 
     /**
-     * List of HTTP methods implemented
+     * List of default content types
      *
      * @var mixed[]
      */
@@ -306,7 +306,7 @@ class Router
      * - 'filters'      string|string[] List of columns that can be used as
      *                                  query parameters to filter collection
      *                                  requests
-     * - 'cache'        boolean         If caching Headers should be sent
+     * - 'cache'        boolean         If caching headers should be sent
      * - 'max_age'      int             Cache-Control max-age (seconds)
      * - 'public'       mixed           If can be accessed without
      *                                  authentication, and optionally which
@@ -331,6 +331,7 @@ class Router
      * @param mixed[] $resources List of resources available
      * @param mixed[] $config    Configurations for the Router @see CONFIGURABLE
      *
+     * @throws RouterException If $resources is empty
      * @throws RouterException If any $resource does not define a Model class
      * @throws RouterException If any $config key is invalid
      * @throws RouterException If any $config has invalid type
@@ -620,6 +621,7 @@ class Router
      * @throws RouterException If $uri has invalid extension
      * @throws RouterException If Resource's Content-Type handler does not allow
      *                         requested kind
+     * @throws RouterException If could not process the request
      */
     public function run(
         string $method,
@@ -1275,7 +1277,7 @@ class Router
      */
 
     /**
-     * Parses request Accept
+     * Parses Accept header
      *
      * NOTE:
      * - If $resource does not comply to $accept, but it does not forbid any of
@@ -1708,13 +1710,13 @@ class Router
     /**
      * Checks if Response is modified from Client's cache
      *
-     * It adds caching Headers
+     * It adds caching headers
      *
      * @param Response $response Response to be checked
      * @param string   $e_tags   Request If-None-Match Header
      * @param integer  $max_age  Resource max_age
      *
-     * @return Response With caching Headers or with Not Modified status
+     * @return Response With caching headers or with Not Modified status
      *
      * @throws RouterException If 'cache_method' config is invalid
      */
@@ -2064,7 +2066,7 @@ class Router
     }
 
     /**
-     * Tells if a resource has public access
+     * Tells if a resource's method has public access
      *
      * @param string          $resource Resource name
      * @param string|string[] $methods  Which methods to test
