@@ -350,10 +350,9 @@ class Router
         }
 
         foreach ($resources as $resource => $data) {
-            if (gettype($data) === 'string') {
+            if (!is_array($data)) {
                 $data = ['model' => $data];
             }
-            $data = (array) $data;
             if (!array_key_exists('model', $data)) {
                 $this->sendError(
                     static::ERROR_INTERNAL_SERVER,
@@ -407,7 +406,7 @@ class Router
         $config = $this->authentication ?? null;
         if ($config === null) {
             return;
-        } elseif (is_string($config)) {
+        } elseif (!is_array($config)) {
             $config = ['secret' => $config];
         }
         $config = array_merge(
