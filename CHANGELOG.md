@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Resouce->payload`
 - `Router::externalHandler()`
 - `Router::ENABLE_METHOD_OVERRIDE`
+- Extending section
 
 ### Changed
 - Update dependencies

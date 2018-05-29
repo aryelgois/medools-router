@@ -18,6 +18,7 @@ Index:
 - [Cache]
 - [Authentication and Authorization]
 - [Errors]
+- [Extending]
 - [Changelog]
 
 
@@ -545,6 +546,12 @@ If an error or exception was not handled correctly, the response body is
 unpredictable and may depend on [error_reporting].
 
 
+# Extending
+
+You can extend the Router class to hack its code. Just remember to pass the
+correct class to the Controller.
+
+
 # [Changelog]
 
 
@@ -564,6 +571,7 @@ unpredictable and may depend on [error_reporting].
 [Cache]: #cache
 [Authentication and Authorization]: #authentication-and-authorization
 [Errors]: #errors
+[Extending]: #extending
 
 [example]: example
 [changelog]: CHANGELOG.md
