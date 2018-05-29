@@ -200,24 +200,6 @@ an array with:
 - `methods` _(string|string[])_: Allowed HTTP methods. Defaults to
   `implemented_methods`. `OPTIONS` is implicitly included
 
-- `content_type` _(mixed[])_: Map of special content types and their external
-  handlers. The value can be a string or an array:
-
-  - `handler` _(string|string[])_ **required**: External function or method that
-    accepts a `Resource` and is capable of generating all the output (both
-    Headers and Body) for the Response
-
-    It can be a string or map different handlers for `resource` and `collection`
-    requests. If any of these is omitted or set to null, is considered not
-    acceptable
-
-  - `priority` _(string|string[])_: Multiplies with the quality factor for a
-    corresponding content type in `Accept`. It is also used to decide the
-    preferred content type when `Accept` does not match any. (default: `1`)
-
-  Note that these content types are only used in `GET` and `HEAD` requests. The
-  handler does not need to worry about `HEAD` requests
-
 - `handlers` _(mixed[])_: Map of HTTP methods to php functions that process the
   Request
 

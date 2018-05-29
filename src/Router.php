@@ -305,8 +305,8 @@ class Router
      * - 'methods'      string|string[] Allowed HTTP methods. Defaults to
      *                                  IMPLEMENTED_METHODS. 'OPTIONS' is
      *                                  implicitly included
-     * - 'content_type' mixed[]         Map of special Content-Types and their
-     *                                  external handlers
+     * - `handlers`     mixed[]         Map of HTTP methods to php functions
+     *                                  that process the Request
      * - 'filters'      string|string[] List of columns that can be used as
      *                                  query parameters to filter collection
      *                                  requests
