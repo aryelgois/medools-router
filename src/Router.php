@@ -359,12 +359,14 @@ class Router
             if (!is_array($data)) {
                 $data = ['model' => $data];
             }
+
             if (!array_key_exists('model', $data)) {
                 $this->sendError(
                     static::ERROR_INTERNAL_SERVER,
                     "Resource '$resource' does not define a model class"
                 );
             }
+
             if (array_key_exists('handlers', $data)
                 && !is_array($data['handlers'])
             ) {
@@ -373,6 +375,7 @@ class Router
                     "Handler list for '$resource' is invalid"
                 );
             }
+
             $this->resources[$resource] = $data;
         }
 
@@ -841,8 +844,6 @@ class Router
 
         $where = $resource->where;
         $resource_query = $resource->query;
-        $fields = $this->parseFields($resource);
-        $has_fields = ($resource->query['fields'] ?? '') !== '';
 
         /*
          * Filter query parameters
@@ -1024,7 +1025,10 @@ class Router
             return;
         }
 
+        $fields = $this->parseFields($resource);
+        $has_fields = ($resource->query['fields'] ?? '') !== '';
         $body = null;
+
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
