@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- Add `Removed` section in 0.2.0 Changelog
+
 
 ## [0.2.0] - 2018-05-29
 
@@ -42,6 +45,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Route extensions are only used in `GET` and `HEAD` requests
 - Allow using a different Router in the Controller
 - `Router::requestRoot()` receive headers and request payload
+
+### Removed
+- `content_type` resource config
 
 ### Fixed
 - Composer description
