@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Router::getAcceptedType()`
 - `Router::parseContentType()`
 - `Resouce->payload`
+- `Router::externalHandler()`
 
 ### Changed
 - Update dependencies

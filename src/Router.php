@@ -1020,36 +1020,14 @@ class Router
         /*
          * Process request
          */
+        if ($this->externalHandler($resource)) {
+            return;
+        }
+
         $body = null;
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
-                $resource_types = $this->computeResourceTypes($resource->name);
-                $handler = $resource_types[$resource->content_type]['handler'];
-                if (is_array($handler)) {
-                    $handler = $handler[$resource->kind];
-                }
-                if ($handler !== null) {
-                    if (is_callable($handler)) {
-                        if ($this->method === 'HEAD') {
-                            ob_start();
-                            $handler($resource);
-                            ob_end_clean();
-                        } else {
-                            $handler($resource);
-                            ob_flush();
-                        }
-                        return;
-                    } else {
-                        $message = "Resource '$resource->name' has invalid "
-                            . "$resource->content_type handler (collection)";
-                        $this->sendError(
-                            static::ERROR_INTERNAL_SERVER,
-                            $message
-                        );
-                    }
-                }
-
                 $body = $resource->model_class::dump($where, $fields);
                 break;
 
@@ -1137,6 +1115,10 @@ class Router
      */
     protected function requestResource(Resource $resource)
     {
+        if ($this->externalHandler($resource)) {
+            return;
+        }
+
         $response = $this->prepareResponse();
 
         $resource_class = $resource->model_class;
@@ -1150,31 +1132,7 @@ class Router
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
-                $resource_types = $this->computeResourceTypes($resource->name);
-                $handler = $resource_types[$resource->content_type]['handler'];
-                if (is_array($handler)) {
-                    $handler = $handler[$resource->kind];
-                }
-                if ($handler !== null) {
-                    if (is_callable($handler)) {
-                        if ($this->method === 'HEAD') {
-                            ob_start();
-                            $handler($resource);
-                            ob_end_clean();
-                        } else {
-                            $handler($resource);
-                            ob_flush();
-                        }
-                        return;
-                    } else {
-                        $message = "Resource '$resource->name' has invalid "
-                            . "$resource->content_type handler";
-                        $this->sendError(
-                            static::ERROR_INTERNAL_SERVER,
-                            $message
-                        );
-                    }
-                }
+                // default output
                 break;
 
             case 'DELETE':
@@ -1889,6 +1847,70 @@ class Router
         $model = $this->resources[$resource]['model'];
         $database = $model::getDatabase();
         return $database->count($model::TABLE, $where ?? []);
+    }
+
+    /**
+     * Determines external handler for a Resource and executes it
+     *
+     * @param Resource $resource Resource to be sent to handler
+     *
+     * @return boolean For success or failure
+     *
+     * @throws RouterException If handler is invalid
+     */
+    protected function externalHandler(Resource $resource)
+    {
+        $handlers = $this->resources[$resource->name]['handlers'] ?? [];
+
+        if (!empty($handlers)) {
+            if ($this->safe_method) {
+                $handlers = $handlers['GET'] ?? null;
+                if (is_array($handlers)) {
+                    $handlers = $this->getAvailableTypes($resource->name);
+                    $type = $resource->content_type;
+                }
+            } else {
+                $handlers = $handlers[$this->method] ?? null;
+                if (is_array($handlers)) {
+                    $type = $resource->payload['mime'];
+                }
+            }
+
+            if (isset($type)) {
+                $handler = $handlers[$type];
+                if (is_array($handler)) {
+                    $handler = $handler[$resource->kind];
+                }
+                if ($type === 'application/json' && $handler == '__DEFAULT__') {
+                    $handler = null;
+                }
+            } else {
+                $handler = $handlers;
+            }
+
+            if ($handler !== null) {
+                if (is_callable($handler)) {
+                    if ($this->method === 'HEAD') {
+                        ob_start();
+                        $handler($resource);
+                        ob_end_clean();
+                    } else {
+                        $handler($resource);
+                        ob_flush();
+                    }
+                    return true;
+                }
+                $this->sendError(static::ERROR_INTERNAL_SERVER, sprintf(
+                    "Resource '%s' has invalid %s handler: '%s' (%s request)",
+                    $resource->name,
+                    $this->method,
+                    $handler,
+                    $resource->kind
+                ));
+            }
+        }
+
+        return false;
     }
 
     /**
