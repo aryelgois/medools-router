@@ -16,13 +16,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Column types in Authorization
 - Support to multipart extensions
 - `Router->safe_method`
+- `handlers` resource config
+- `Router::compareAccept()`
+- `Router::getAcceptedType()`
+- `Router::parseContentType()`
+- `Resouce->payload`
+- `Router::externalHandler()`
 
 ### Changed
 - Update dependencies
+- Update README
 - Use `class` keyword in foreign classes
 - Update `Router::isPublic()`
 - Rewrite `Router::getAuthorizedResources()`
 - Update `Router::requestRoot()`
+- Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
+- Split `Router::parceAccept()`
+- Update `Router::parseBody()`
+- Update `Router::run()`
 
 ### Deprecated
 

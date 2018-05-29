@@ -97,11 +97,20 @@ class Resource
     public $query;
 
     /**
-     * Parsed Content Body
+     * Parsed JSON request payload
      *
      * @var array
      */
     public $data;
+
+    /**
+     * Unparsed request payload
+     *
+     * When using a custom handler
+     *
+     * @var string[] With keys 'mime' and 'body'
+     */
+    public $payload;
 
     /**
      * Which content type should be produced, null means internal content type
