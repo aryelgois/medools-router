@@ -1,23 +1,23 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8cee3ab9e77c404011d4a4154cdfd869",
+    "content-hash": "e600f87400b515bf5de6c1842caf1661",
     "packages": [
         {
             "name": "aryelgois/medools",
-            "version": "v5.0.0",
+            "version": "v5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aryelgois/Medools.git",
-                "reference": "82d68bbe2c8f618d353b8221dda7cc7f0eaf2dcd"
+                "reference": "cdae1cca42e2ed518e5a62c4c34832d9afd1eb7d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aryelgois/Medools/zipball/82d68bbe2c8f618d353b8221dda7cc7f0eaf2dcd",
-                "reference": "82d68bbe2c8f618d353b8221dda7cc7f0eaf2dcd",
+                "url": "https://api.github.com/repos/aryelgois/Medools/zipball/cdae1cca42e2ed518e5a62c4c34832d9afd1eb7d",
+                "reference": "cdae1cca42e2ed518e5a62c4c34832d9afd1eb7d",
                 "shasum": ""
             },
             "require": {
@@ -51,7 +51,7 @@
                 "medoo",
                 "medools"
             ],
-            "time": "2018-03-29T14:42:04+00:00"
+            "time": "2018-05-28T18:17:43+00:00"
         },
         {
             "name": "aryelgois/utils",
@@ -94,16 +94,16 @@
         },
         {
             "name": "aryelgois/yasql-php",
-            "version": "v0.5.0",
+            "version": "v0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aryelgois/yasql-php.git",
-                "reference": "683c8e021b44bc17c022a62adf29bb679469342d"
+                "reference": "f428b180d35bfc1ddf1f9b3323f9b085fbc09ac7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aryelgois/yasql-php/zipball/683c8e021b44bc17c022a62adf29bb679469342d",
-                "reference": "683c8e021b44bc17c022a62adf29bb679469342d",
+                "url": "https://api.github.com/repos/aryelgois/yasql-php/zipball/f428b180d35bfc1ddf1f9b3323f9b085fbc09ac7",
+                "reference": "f428b180d35bfc1ddf1f9b3323f9b085fbc09ac7",
                 "shasum": ""
             },
             "require": {
@@ -135,7 +135,7 @@
                 "yaml",
                 "yasql"
             ],
-            "time": "2018-03-26T16:32:29+00:00"
+            "time": "2018-05-28T19:27:29+00:00"
         },
         {
             "name": "catfan/medoo",
@@ -243,21 +243,77 @@
             "time": "2017-06-27T22:17:23+00:00"
         },
         {
-            "name": "symfony/yaml",
-            "version": "v3.4.6",
+            "name": "symfony/polyfill-ctype",
+            "version": "v1.8.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/yaml.git",
-                "reference": "6af42631dcf89e9c616242c900d6c52bd53bd1bb"
+                "url": "https://github.com/symfony/polyfill-ctype.git",
+                "reference": "7cc359f1b7b80fc25ed7796be7d96adc9b354bae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/6af42631dcf89e9c616242c900d6c52bd53bd1bb",
-                "reference": "6af42631dcf89e9c616242c900d6c52bd53bd1bb",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/7cc359f1b7b80fc25ed7796be7d96adc9b354bae",
+                "reference": "7cc359f1b7b80fc25ed7796be7d96adc9b354bae",
                 "shasum": ""
             },
             "require": {
-                "php": "^5.5.9|>=7.0.8"
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.8-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Polyfill\\Ctype\\": ""
+                },
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                },
+                {
+                    "name": "Gert de Pagter",
+                    "email": "BackEndTea@gmail.com"
+                }
+            ],
+            "description": "Symfony polyfill for ctype functions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "ctype",
+                "polyfill",
+                "portable"
+            ],
+            "time": "2018-04-30T19:57:29+00:00"
+        },
+        {
+            "name": "symfony/yaml",
+            "version": "v3.4.11",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/yaml.git",
+                "reference": "c5010cc1692ce1fa328b1fb666961eb3d4a85bb0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/c5010cc1692ce1fa328b1fb666961eb3d4a85bb0",
+                "reference": "c5010cc1692ce1fa328b1fb666961eb3d4a85bb0",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5.9|>=7.0.8",
+                "symfony/polyfill-ctype": "~1.8"
             },
             "conflict": {
                 "symfony/console": "<3.4"
@@ -298,7 +354,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2018-02-16T09:50:28+00:00"
+            "time": "2018-05-03T23:18:14+00:00"
         }
     ],
     "packages-dev": [],

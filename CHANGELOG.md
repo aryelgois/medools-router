@@ -8,6 +8,50 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [0.2.0] - 2018-05-29
+
+### Added
+- Repository title
+- `from_globals()`
+- `Router::getAllowedMethods()`
+- `Router::SAFE_METHODS`
+- Column types in Authorization
+- Support to multipart extensions
+- `Router->safe_method`
+- `handlers` resource config
+- `Router::compareAccept()`
+- `Router::getAcceptedType()`
+- `Router::parseContentType()`
+- `Resouce->payload`
+- `Router::externalHandler()`
+- `Router::ENABLE_METHOD_OVERRIDE`
+- Extending section
+
+### Changed
+- Update dependencies
+- Update README
+- Use `class` keyword in foreign classes
+- Update `Router::isPublic()`
+- Rewrite `Router::getAuthorizedResources()`
+- Update `Router::requestRoot()`
+- Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
+- Split `Router::parceAccept()`
+- Update `Router::parseBody()`
+- Update `Router::run()`
+- Route extensions are only used in `GET` and `HEAD` requests
+- Allow using a different Router in the Controller
+- `Router::requestRoot()` receive headers and request payload
+
+### Fixed
+- Composer description
+- Comparison operator
+- README
+- Example README
+- External handler output
+- Authentication's invalid type error message
+
+
 ## [0.1.0] - 2018-03-31
 
 ### Added
@@ -34,7 +78,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Namespace to `aryelgois\MedoolsRouter`
 
 
-[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.1.0...develop
+[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.2.0...develop
+[0.2.0]: https://github.com/aryelgois/medools-router/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...v0.1.0
 
 [aryelgois/medools]: https://github.com/aryelgois/Medools

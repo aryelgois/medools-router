@@ -1,6 +1,6 @@
 {
     "name": "aryelgois/medools-router",
-    "description": "A Router class to bootstrap RESTful APIs based on aryelgois/medools",
+    "description": "A Router framework to bootstrap RESTful APIs based on aryelgois/Medools",
     "keywords": ["Medools", "RESTful", "API"],
     "license": "MIT",
     "authors": [
@@ -13,8 +13,8 @@
         "php": "^7.0",
         "ext-zlib": "*",
         "aryelgois/utils": "^0.5",
-        "aryelgois/medools": "^5.0",
-        "aryelgois/yasql-php": "^0.5.0",
+        "aryelgois/medools": "^5.1",
+        "aryelgois/yasql-php": "^0.6.0",
         "firebase/php-jwt": "^5.0"
     },
     "autoload": {

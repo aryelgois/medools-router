@@ -1,3 +1,5 @@
+# Medools Router
+
 Index:
 
 - [Intro]
@@ -16,6 +18,7 @@ Index:
 - [Cache]
 - [Authentication and Authorization]
 - [Errors]
+- [Extending]
 - [Changelog]
 
 
@@ -43,7 +46,7 @@ each column must be in the `id`, separated by `primary_key_separator`, e.g.
 Also, resources can be nested:
 
 - `/resource/id/resource_1`: Requests a collection of `resource_1` with
-  `resource(id)` in the appropriate foreign column \*
+  `resource(id)` in the appropriate foreign column*
 
 - `/resource/id/resource_1/offset`: Requests a specific resource from the
   collection in the previous topic. `offset` works as `collection[offset - 1]`,
@@ -56,7 +59,8 @@ has a foreign key to the previous resource, that has a foreign key to the
 previous one, and so on. The `id` is only used in the first resource.
 
 > \* If `resource_1` has multiple foreign columns for `resource`, only the first
-> one is used
+> one is used. As a work around, you can use
+> [Collection query parameters][Collection request] to filter the correct column
 
 
 ## Root Route
@@ -88,7 +92,7 @@ and a Sign up system (or an administrator will add valid credentials).
 ## Configurations
 
 The Router accepts an array of configurations that will be passed to properties
-in it. The array can contain:
+in it. The array may contain:
 
 - `always_cache` _(boolean)_: If `GET` and `HEAD` requests always check cache
   headers (default: `true`)
@@ -131,33 +135,35 @@ in it. The array can contain:
   serialized (default: `md5`)
 
 - `default_content_type` _(mixed[])_: Default content type for `GET` requests.
-  It is combined with resource's content types
+  It is combined with resource's `GET` handlers
 
-  The default is `application/json` with internal handlers and priority 1
+  The default is `application/json` with internal handlers
 
-- `default_filters` _(string|string[]|null)_: Default value for resources
+- `default_filters` _(string|string[]|null)_: Default value for resources'
   filters. See more in [Resources list] `filters` option
 
-- `default_publicity` _(boolean|string[]|string)_: Default value for resources
+- `default_publicity` _(boolean|string[]|string)_: Default value for resources'
   `public` option
 
   - `false`: All resources are private by default. It only has effect if
     `authentication` is not `null`
 
   - `true`: All resources are public by default. It has the same effect as not
-    defining `authentication`. If it is defined, is useful to make most
-    resources public and some private
+    defining `authentication`, but if it is defined, this value is useful to
+    make most resources public and some private
 
   - `string[]`: List of methods that are always public
 
   - `string`: The same as an array with one item
 
-- `extensions` _(string[])_: Map of extensions and their related content type
+- `extensions` _(string[])_: Map of file extensions and a related content type
 
   It allows overriding browser's `Accept` header with an extension in the URL.
   Fill it with extensions for custom content types your resources use
 
-  **NOTE**: Unknown extensions may invalidate the route
+  Note that it is only checked by safe methods and is only useful to resources
+  that define custom `GET` handlers. Using unknown extensions or when they are
+  not expected may invalidate the route
 
 - `implemented_methods` _(string[])_: List of HTTP methods implemented by the
   API. You can limit which methods can be used, but to add more methods you
@@ -198,23 +204,30 @@ an array with:
 - `methods` _(string|string[])_: Allowed HTTP methods. Defaults to
   `implemented_methods`. `OPTIONS` is implicitly included
 
-- `content_type` _(mixed[])_: Map of special content types and their external
-  handlers. The value can be a string or an array:
+- `handlers` _(mixed[])_: Map of HTTP methods to php functions that process the
+  Request
 
-  - `handler` _(string|string[])_ **required**: External function or method that
-    accepts a `Resource` and is capable of generating all the output (both
-    Headers and Body) for the Response
+  - Several levels of arrays are allowed but not required, in the order:
+    `HTTP method => Content type => Resource kind` (resource or collection). The
+    leaves must be the function names
 
-    It can be a string or map different handlers for `resource` and `collection`
-    requests. If any of these is omitted or set to null, is considered not
-    acceptable
+  - These functions receive a `Resource` and must be capable of generating all
+    the output (both Headers and Body) for the Response. Exceptions are catched
+    by the Router
 
-  - `priority` _(string|string[])_: Multiplies with the quality factor for a
-    corresponding content type in `Accept`. It is also used to decide the
-    preferred content type when `Accept` does not match any. (default: `1`)
+  - The same handlers for `GET` are used for `HEAD` requests, and a `HEAD` key
+    is ignored. Content types for `GET` are related to the accepted Response,
+    while other methods use them with the Request's payload
 
-  Note that these content types are only used in `GET` and `HEAD` requests. The
-  handler does not need to worry about `HEAD` requests
+  - `GET` content types enable their related extensions in the route endpoint
+
+  - All methods implicitly have an internal `application/json` handler. If a
+    method defines a single handler (i.e. a `string`) or if a `application/json`
+    key is set, the internal handler is disabled for that method (unless using
+    the magic value `__DEFAULT__`)
+
+  - When defining a single Resource kind (or setting one to `null`), requesting
+    the disabled one is not acceptable
 
 - `filters` _(string|string[])_: List of columns that can be used as query
   parameters to filter collection requests. It also accepts a string of a
@@ -222,7 +235,7 @@ an array with:
   or `ALL` to allow filtering on any column. It replaces the `default_filters`
   config
 
-- `cache` _(boolean)_: If caching Headers should be sent. It overrides the
+- `cache` _(boolean)_: If caching headers should be sent. It overrides the
   `always_cache` config
 
 - `max_age` _(int)_: `Cache-Control` max-age (seconds). Tells how long the cache
@@ -246,8 +259,8 @@ it gathers request data:
 
 - `Method`: A HTTP method
 
-- `URI`: Requested route. It comes with the path to the api directory, which
-  must be removed. Query parameters must remain in the URI
+- `URI`: Requested route. It must not contain the path to the api directory, but
+  query parameters must remain in the URI
 
 - `Headers`: Headers in the request. Used headers are:
 
@@ -255,16 +268,18 @@ it gathers request data:
     Possible types are Basic and Bearer
 
   - `X-HTTP-Method-Override`: If your clients can not work with `PUT`, `PATCH`
-    or `DELETE`, they can use it to replace `POST` method
+    or `DELETE`, they can use it to replace `POST` method. It is enabled by
+    `ENABLE_METHOD_OVERRIDE`
 
-  - `Content-Type`: Data sent in the payload is expected to be
-    `application/json`
+  - `Content-Type`: Data in the request payload is expected to be
+    `application/json` by default. Resources may specify more types they read
+    with external handlers
 
-  - `Accept`: The Router responses, by default, with `application/json`. But
-    resources may define specific content types, associated to external handlers
+  - `Accept`: The Router responses are, by default, in `application/json`. But
+    resources may define more types they output, associated to external handlers
 
-  - `If-None-Match`: When using caching Headers, it is checked to see if a stale
-    cache can still be used
+  - `If-None-Match`: If caching headers are enabled, it is checked to see if a
+    stale cache can still be used
 
 - `Body`: Raw data from the payload that will be parsed
 
@@ -293,7 +308,7 @@ The following HTTP methods are implemented by the Router class:
 - `GET`: By default, responses contain a JSON representation of the requested
   route
 
-  - Resource requests receive a `Link` header listing the location of foreign
+  - Resource requests include a `Link` header listing the location of foreign
     models
 
   - Collection requests include a `Link` header for pagination and a
@@ -304,9 +319,10 @@ The following HTTP methods are implemented by the Router class:
 
   Different content types can be [configured per resource][Resources list] and
   it is chosen based on request's `Accept` header. They will not send the
-  headers listed previously
+  headers listed previously (unless the external handler sends by itself)
 
-- `HEAD`: Does the same processing for `GET`, but only send headers
+- `HEAD`: Does the same processing for `GET`, but only send headers (even for
+  external handlers)
 
 - `OPTIONS`: Lists allowed methods for the requested route in `Allow` header. It
   is a special method that is always allowed, if implemented
@@ -448,7 +464,7 @@ Notes:
 
 # Cache
 
-If enabled, caching Headers `ETag` and `Cache-Control` are sent with successful
+If enabled, caching headers `ETag` and `Cache-Control` are sent with successful
 responses that have a body.
 
 This functionality can be enabled globally or per resource.
@@ -531,6 +547,12 @@ If an error or exception was not handled correctly, the response body is
 unpredictable and may depend on [error_reporting].
 
 
+# Extending
+
+You can extend the Router class to hack its code. Just remember to pass the
+correct class to the Controller.
+
+
 # [Changelog]
 
 
@@ -550,6 +572,7 @@ unpredictable and may depend on [error_reporting].
 [Cache]: #cache
 [Authentication and Authorization]: #authentication-and-authorization
 [Errors]: #errors
+[Extending]: #extending
 
 [example]: example
 [changelog]: CHANGELOG.md

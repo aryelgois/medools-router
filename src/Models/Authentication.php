@@ -10,7 +10,7 @@ namespace aryelgois\MedoolsRouter\Models;
 use aryelgois\Medools;
 
 /**
- * Provides Basic Authentication
+ * Provides simple Authentication
  *
  * @author Aryel Mota Góis
  * @license MIT
@@ -91,7 +91,7 @@ class Authentication extends Medools\Model
      */
     protected function onColumnChange($column, $value)
     {
-        if ($column == 'password') {
+        if ($column === 'password') {
             $value = static::hashPassword($value);
         }
 

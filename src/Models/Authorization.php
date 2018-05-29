@@ -10,7 +10,7 @@ namespace aryelgois\MedoolsRouter\Models;
 use aryelgois\Medools;
 
 /**
- * Holds user permissions for each resource
+ * Holds user permissions for one resource
  *
  * @author Aryel Mota Góis
  * @license MIT
@@ -25,8 +25,8 @@ class Authorization extends Medools\Model
     const COLUMNS = [
         'user',
         'resource',
-        'methods',
-        'filter',
+        'methods [JSON]',
+        'filter [JSON]',
     ];
 
     const PRIMARY_KEY = [
@@ -42,7 +42,7 @@ class Authorization extends Medools\Model
 
     const FOREIGN_KEYS = [
         'user' => [
-            __NAMESPACE__ . '\\Authentication',
+            Authentication::class,
             'id'
         ],
     ];

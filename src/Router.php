@@ -32,6 +32,32 @@ use Firebase\JWT\JWT;
 class Router
 {
     /*
+     * Errors
+     * =========================================================================
+     */
+
+    const ERROR_UNKNOWN_ERROR = 0;
+    const ERROR_INTERNAL_SERVER = 1;
+    const ERROR_INVALID_CREDENTIALS = 2;
+    const ERROR_UNAUTHENTICATED = 3;
+    const ERROR_INVALID_TOKEN = 4;
+    const ERROR_METHOD_NOT_IMPLEMENTED = 5;
+    const ERROR_UNAUTHORIZED = 6;
+    const ERROR_INVALID_RESOURCE = 7;
+    const ERROR_INVALID_RESOURCE_ID = 8;
+    const ERROR_INVALID_RESOURCE_OFFSET = 9;
+    const ERROR_INVALID_RESOURCE_FOREIGN = 10;
+    const ERROR_RESOURCE_NOT_FOUND = 11;
+    const ERROR_UNSUPPORTED_MEDIA_TYPE = 12;
+    const ERROR_INVALID_PAYLOAD = 13;
+    const ERROR_METHOD_NOT_ALLOWED = 14;
+    const ERROR_NOT_ACCEPTABLE = 15;
+    const ERROR_INVALID_QUERY_PARAMETER = 16;
+    const ERROR_UNKNOWN_FIELDS = 17;
+    const ERROR_READONLY_RESOURCE = 18;
+    const ERROR_FOREIGN_CONSTRAINT = 19;
+
+    /*
      * Router configurations
      * =========================================================================
      */
@@ -58,6 +84,13 @@ class Router
     ];
 
     /**
+     * If a POST request can be replaced with a X-Http-Method-Override header
+     *
+     * @const boolean
+     */
+    const ENABLE_METHOD_OVERRIDE = true;
+
+    /**
      * Maps filter operators in query parameters to their Medoo counterpart
      *
      * NOTE:
@@ -78,6 +111,19 @@ class Router
         'lk' => '~',      // LiKe
         'nk' => '!~',     // Not liKe
         'rx' => 'REGEXP', // RegeXp
+    ];
+
+    /**
+     * List of safe HTTP methods
+     *
+     * NOTE:
+     * - OPTIONS would be here, but it is treated as a special method
+     *
+     * @const string[]
+     */
+    const SAFE_METHODS = [
+        'GET',
+        'HEAD',
     ];
 
     /**
@@ -124,15 +170,12 @@ class Router
     protected $cache_method = 'md5';
 
     /**
-     * List of HTTP methods implemented
+     * List of default content types
      *
      * @var mixed[]
      */
     protected $default_content_type = [
-        'application/json' => [
-            'handler' => null,
-            'priority' => 1,
-        ],
+        'application/json' => '__DEFAULT__',
     ];
 
     /**
@@ -254,6 +297,13 @@ class Router
     protected $method;
 
     /**
+     * If $method is in SAFE_METHODS
+     *
+     * @var boolean
+     */
+    protected $safe_method;
+
+    /**
      * List of resources available in the Router
      *
      * Each key is a resource name which maps to a Fully Qualified Model Class
@@ -262,12 +312,12 @@ class Router
      * - 'methods'      string|string[] Allowed HTTP methods. Defaults to
      *                                  IMPLEMENTED_METHODS. 'OPTIONS' is
      *                                  implicitly included
-     * - 'content_type' mixed[]         Map of special Content-Types and their
-     *                                  external handlers
+     * - `handlers`     mixed[]         Map of HTTP methods to php functions
+     *                                  that process the Request
      * - 'filters'      string|string[] List of columns that can be used as
      *                                  query parameters to filter collection
      *                                  requests
-     * - 'cache'        boolean         If caching Headers should be sent
+     * - 'cache'        boolean         If caching headers should be sent
      * - 'max_age'      int             Cache-Control max-age (seconds)
      * - 'public'       mixed           If can be accessed without
      *                                  authentication, and optionally which
@@ -281,32 +331,6 @@ class Router
     protected $resources = [];
 
     /*
-     * Errors
-     * =========================================================================
-     */
-
-    const ERROR_UNKNOWN_ERROR = 0;
-    const ERROR_INTERNAL_SERVER = 1;
-    const ERROR_INVALID_CREDENTIALS = 2;
-    const ERROR_UNAUTHENTICATED = 3;
-    const ERROR_INVALID_TOKEN = 4;
-    const ERROR_METHOD_NOT_IMPLEMENTED = 5;
-    const ERROR_UNAUTHORIZED = 6;
-    const ERROR_INVALID_RESOURCE = 7;
-    const ERROR_INVALID_RESOURCE_ID = 8;
-    const ERROR_INVALID_RESOURCE_OFFSET = 9;
-    const ERROR_INVALID_RESOURCE_FOREIGN = 10;
-    const ERROR_RESOURCE_NOT_FOUND = 11;
-    const ERROR_UNSUPPORTED_MEDIA_TYPE = 12;
-    const ERROR_INVALID_PAYLOAD = 13;
-    const ERROR_METHOD_NOT_ALLOWED = 14;
-    const ERROR_NOT_ACCEPTABLE = 15;
-    const ERROR_INVALID_QUERY_PARAMETER = 16;
-    const ERROR_UNKNOWN_FIELDS = 17;
-    const ERROR_READONLY_RESOURCE = 18;
-    const ERROR_FOREIGN_CONSTRAINT = 19;
-
-    /*
      * Basic methods
      * =========================================================================
      */
@@ -318,7 +342,9 @@ class Router
      * @param mixed[] $resources List of resources available
      * @param mixed[] $config    Configurations for the Router @see CONFIGURABLE
      *
+     * @throws RouterException If $resources is empty
      * @throws RouterException If any $resource does not define a Model class
+     * @throws RouterException If any $resource handlers list is invalid
      * @throws RouterException If any $config key is invalid
      * @throws RouterException If any $config has invalid type
      */
@@ -337,16 +363,26 @@ class Router
         }
 
         foreach ($resources as $resource => $data) {
-            if (gettype($data) === 'string') {
+            if (!is_array($data)) {
                 $data = ['model' => $data];
             }
-            $data = (array) $data;
+
             if (!array_key_exists('model', $data)) {
                 $this->sendError(
                     static::ERROR_INTERNAL_SERVER,
                     "Resource '$resource' does not define a model class"
                 );
             }
+
+            if (array_key_exists('handlers', $data)
+                && !is_array($data['handlers'])
+            ) {
+                $this->sendError(
+                    static::ERROR_INTERNAL_SERVER,
+                    "Handler list for '$resource' is invalid"
+                );
+            }
+
             $this->resources[$resource] = $data;
         }
 
@@ -394,7 +430,7 @@ class Router
         $config = $this->authentication ?? null;
         if ($config === null) {
             return;
-        } elseif (is_string($config)) {
+        } elseif (!is_array($config)) {
             $config = ['secret' => $config];
         }
         $config = array_merge(
@@ -423,7 +459,7 @@ class Router
             }
             $this->sendError(
                 static::ERROR_INTERNAL_SERVER,
-                'Invalid Authorization type'
+                "Invalid Authorization type: '$type'"
             );
         }
 
@@ -474,7 +510,7 @@ class Router
         if ($type !== $type_h) {
             $this->sendError(
                 static::ERROR_INVALID_CREDENTIALS,
-                'Invalid Authorization type'
+                "Invalid Authorization type in header: '$type_h'"
             );
         }
 
@@ -588,7 +624,7 @@ class Router
 
         $this->sendError(
             static::ERROR_INTERNAL_SERVER,
-            'Invalid Authorization type'
+            "Invalid Authorization type: '$type'"
         );
     }
 
@@ -608,6 +644,7 @@ class Router
      * @throws RouterException If $uri has invalid extension
      * @throws RouterException If Resource's Content-Type handler does not allow
      *                         requested kind
+     * @throws RouterException If could not process the request
      */
     public function run(
         string $method,
@@ -620,10 +657,13 @@ class Router
             'Bearer'
         );
 
-        if (strcasecmp($method, 'POST') === 0) {
+        if (static::ENABLE_METHOD_OVERRIDE
+            && strcasecmp($method, 'POST') === 0
+        ) {
             $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
         }
         $this->method = strtoupper($actual_method ?? $method);
+        $this->safe_method = in_array($this->method, static::SAFE_METHODS);
 
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
@@ -635,25 +675,19 @@ class Router
                 $allow
             );
         }
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
 
         $resource = $this->parseRoute($uri);
         $response = null;
 
         if ($resource === null) {
             if ($this->method !== 'OPTIONS') {
-                $response = $this->requestRoot();
+                $response = $this->requestRoot($headers, $body);
             }
         } else {
             $resource_name = $resource['name'];
-            $resource_extension = $resource['extension'];
             $resource_data = $this->resources[$resource_name];
-            $resource_accept = $this->extensions[$resource_extension] ?? null;
-
-            parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-            $data = $this->parseBody($headers['Content-Type'] ?? '', $body);
-            $resource['query'] = $query;
-            $resource['data'] = $data;
+            $resource_extension = $resource['extension'];
+            $prefered_type = $this->extensions[$resource_extension] ?? null;
 
             $methods = (array) ($resource_data['methods'] ?? null);
             if (!empty($methods)) {
@@ -672,31 +706,56 @@ class Router
                 }
             }
 
-            if ($safe_method) {
-                $resource_types = $this->computeResourceTypes($resource_name);
-                if ($resource_accept !== null
-                    && !array_key_exists($resource_accept, $resource_types)
-                ) {
-                    $message = "Resource '$resource_name' can not generate "
-                        . "content for '$resource_extension' extension";
-                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+            parse_str(parse_url($uri, PHP_URL_QUERY), $query);
+            $resource['query'] = $query;
+
+            $payload = $this->parseBody(
+                $resource_name,
+                $headers['Content-Type'] ?? '',
+                $body
+            );
+            if (array_key_exists('body', $payload)) {
+                $resource['payload'] = $payload;
+                $resource['data'] = null;
+            } else {
+                $resource['data'] = $payload['data'] ?? [];
+            }
+
+            if ($this->safe_method) {
+                $available = $this->getAvailableTypes($resource_name);
+
+                if ($prefered_type === null) {
+                    $accepted = (empty($available))
+                        ? null
+                        : $accepted = $this->getAcceptedType(
+                            $resource_name,
+                            $headers['Accept'] ?? '*/*'
+                        );
+                } else {
+                    if (!array_key_exists($prefered_type, $available)) {
+                        $message = "Resource '$resource_name' can not generate "
+                            . "content for '$resource_extension' extension";
+                        $this->sendError(
+                            static::ERROR_NOT_ACCEPTABLE,
+                            $message
+                        );
+                    }
+                    $accepted = $prefered_type;
                 }
+                $resource['content_type'] = $accepted;
 
-                $resource['content_type'] = $accepted = $this->parseAccept(
-                    $resource_name,
-                    $resource_accept ?? $headers['Accept'] ?? '*/*'
-                );
-
-                $handlers = $resource_types[$accepted]['handler'];
-                if (is_array($handlers)
-                    && (!array_key_exists($resource['kind'], $handlers)
-                        || $accepted !== 'application/json'
-                        && $handlers[$resource['kind']] === null
-                    )
-                ) {
-                    $message = "Resource '$resource_name' can not generate "
-                        . $resource['content_type'] . ' ' . $resource['kind'];
-                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                if (!empty($available)) {
+                    $handler = $available[$accepted];
+                    if (is_array($handler)
+                        && ($handler[$resource['kind']] ?? null) === null
+                    ) {
+                        $message = "Resource '$resource_name' can not generate "
+                            . $accepted . ' ' . $resource['kind'];
+                        $this->sendError(
+                            static::ERROR_NOT_ACCEPTABLE,
+                            $message
+                        );
+                    }
                 }
 
                 if (($resource['content_location'] ?? null) !== null) {
@@ -793,10 +852,7 @@ class Router
         $response = $this->prepareResponse();
 
         $where = $resource->where;
-        $safe_method = in_array($this->method, ['GET', 'HEAD']);
         $resource_query = $resource->query;
-        $fields = $this->parseFields($resource);
-        $has_fields = ($resource->query['fields'] ?? '') !== '';
 
         /*
          * Filter query parameters
@@ -806,7 +862,7 @@ class Router
             ?? [];
         if (is_string($filters)) {
             if ($filters === 'ALL') {
-                $filters = $resource->model_class::COLUMNS;
+                $filters = $resource->model_class::getColumns();
             } else {
                 $special = $resource->getSpecialFields();
                 if (array_key_exists($filters, $special)) {
@@ -917,7 +973,7 @@ class Router
         /*
          * Per page and page query parameters
          */
-        $per_page = ($safe_method || isset($resource_query['page']))
+        $per_page = ($this->safe_method || isset($resource_query['page']))
             ? $this->per_page
             : 0;
         $per_page = $resource_query['per_page'] ?? $per_page;
@@ -938,7 +994,7 @@ class Router
                 );
             }
 
-            if ($safe_method) {
+            if ($this->safe_method) {
                 $count = $this->countResource($resource->name, $where);
                 $pages = ceil($count / $per_page);
                 $routes = [];
@@ -974,35 +1030,17 @@ class Router
         /*
          * Process request
          */
+        if ($this->externalHandler($resource)) {
+            return;
+        }
+
+        $fields = $this->parseFields($resource);
+        $has_fields = ($resource->query['fields'] ?? '') !== '';
         $body = null;
+
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
-                $resource_types = $this->computeResourceTypes($resource->name);
-                $handler = $resource_types[$resource->content_type]['handler'];
-                if (is_array($handler)) {
-                    $handler = $handler[$resource->kind];
-                }
-                if ($handler !== null) {
-                    if (is_callable($handler)) {
-                        if ($this->method === 'HEAD') {
-                            ob_start();
-                            $handler($resource);
-                            ob_end_clean();
-                        } else {
-                            $handler($resource);
-                        }
-                        return;
-                    } else {
-                        $message = "Resource '$resource->name' has invalid "
-                            . "$resource->content_type handler (collection)";
-                        $this->sendError(
-                            static::ERROR_INTERNAL_SERVER,
-                            $message
-                        );
-                    }
-                }
-
                 $body = $resource->model_class::dump($where, $fields);
                 break;
 
@@ -1090,6 +1128,10 @@ class Router
      */
     protected function requestResource(Resource $resource)
     {
+        if ($this->externalHandler($resource)) {
+            return;
+        }
+
         $response = $this->prepareResponse();
 
         $resource_class = $resource->model_class;
@@ -1103,30 +1145,7 @@ class Router
         switch ($this->method) {
             case 'GET':
             case 'HEAD':
-                $resource_types = $this->computeResourceTypes($resource->name);
-                $handler = $resource_types[$resource->content_type]['handler'];
-                if (is_array($handler)) {
-                    $handler = $handler[$resource->kind];
-                }
-                if ($handler !== null) {
-                    if (is_callable($handler)) {
-                        if ($this->method === 'HEAD') {
-                            ob_start();
-                            $handler($resource);
-                            ob_end_clean();
-                        } else {
-                            $handler($resource);
-                        }
-                        return;
-                    } else {
-                        $message = "Resource '$resource->name' has invalid "
-                            . "$resource->content_type handler";
-                        $this->sendError(
-                            static::ERROR_INTERNAL_SERVER,
-                            $message
-                        );
-                    }
-                }
+                // default output
                 break;
 
             case 'DELETE':
@@ -1219,25 +1238,24 @@ class Router
     /**
      * When requested route is '/'
      *
+     * NOTE:
+     * - Parameters are ignored here. But they exist for children classes
+     *
+     * @param array  $headers Request Headers
+     * @param string $body    Request Body
+     *
      * @return Response With $meta and a row count for each resource. If $meta
      *                  is empty, only the resource count is included
      */
-    protected function requestRoot()
+    protected function requestRoot(array $headers, string $body)
     {
-        $resources = $this->resources;
+        $authorization = $this->getAuthorizedResources();
 
-        if ($this->auth === false) {
-            foreach (array_keys($resources) as $resource) {
-                if (!$this->isPublic($resource)) {
-                    unset($resources[$resource]);
-                }
-            }
-        } elseif ($this->auth instanceof Authentication) {
-            $resources = Utils::arrayWhitelist(
-                $resources,
-                $this->getAuthorizedResources($this->auth->id, ['GET', 'HEAD'])
-            );
-        }
+        $resources = Utils::arrayWhitelist(
+            $this->resources,
+            array_keys($authorization)
+        );
+
         if (empty($resources)) {
             $this->sendError(
                 static::ERROR_UNAUTHORIZED,
@@ -1247,7 +1265,10 @@ class Router
 
         $count = [];
         foreach (array_keys($resources) as $resource) {
-            $count[$resource] = $this->countResource($resource);
+            $count[$resource] = $this->countResource(
+                $resource,
+                $authorization[$resource]
+            );
         }
 
         $response = $this->prepareResponse();
@@ -1265,115 +1286,129 @@ class Router
      */
 
     /**
-     * Parses request Accept
+     * Parses Accept header
      *
-     * NOTE:
-     * - If $resource does not comply to $accept, but it does not forbid any of
-     *   $resource's content types (i.e. ';q=0'), this function returns the
-     *   first $resource's content type with highest priority. It is better to
-     *   return something the client doesn't complain about than a useless error
+     * @param string $accept Accept header
      *
-     * @param string $resource Resource name
-     * @param string $accept   Request Accept
-     *
-     * @return string
-     *
-     * @throws RouterException If Resource has invalid Content-Type
-     * @throws RouterException If no Content-Type is acceptable
+     * @return float[] With 'type' => priority
+     *                 Keys may contain '*'
      */
-    protected function parseAccept(string $resource, string $accept)
+    public static function parseAccept(string $accept)
     {
-        $available_types = [];
-        $resource_types = $this->computeResourceTypes($resource);
-        foreach ($resource_types as $resource_type => $data) {
-            $available_types[$resource_type] = $data['priority'];
-        }
+        $result = [];
 
-        $list = [];
-        $accept_types = explode(',', $accept);
-        foreach ($accept_types as $fragment) {
-            $fragment = explode(';', $fragment);
-            $accept_type = trim($fragment[0]);
+        foreach (explode(',', $accept) as $directive) {
+            $parts = explode(';', $directive, 2);
+
+            $type = trim($parts[0]);
+
             $priority = ((float) filter_var(
-                $fragment[1] ?? 1,
+                $parts[1] ?? 1,
                 FILTER_SANITIZE_NUMBER_FLOAT,
                 FILTER_FLAG_ALLOW_FRACTION
             ));
             $priority = Utils::numberLimit($priority, 0, 1);
-            if (strpos($accept_type, '*') === false) {
-                if (array_key_exists($accept_type, $available_types)) {
-                    $list[$accept_type] = max(
-                        $list[$accept_type] ?? 0,
-                        $priority * $available_types[$accept_type]
-                    );
-                }
-            } else {
+
+            if (strpos($type, '*') !== false) {
                 $priority -= 0.0001;
-                foreach ($available_types as $resource_type => $value) {
-                    if ($value > 0 && fnmatch($accept_type, $resource_type)) {
-                        $list[$resource_type] = max(
-                            $list[$resource_type] ?? 0,
-                            $priority * $value
-                        );
-                    }
-                }
             }
+            $result[$type] = $priority;
         }
 
-        if (empty($list)) {
-            $result = static::firstHigher($available_types);
-            if ($result === null) {
-                $this->sendError(
-                    static::ERROR_INTERNAL_SERVER,
-                    "Resource '$resource' has invalid Content-Type"
-                );
-            }
-        } else {
-            $result = static::firstHigher($list);
-            if ($result === null) {
-                $message = "Resource '$resource' can not generate content"
-                    . ' complying to Accept header';
-                $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
-            }
-        }
         return $result;
     }
 
     /**
      * Parses request body
      *
-     * @param string $type Request Content-Type
+     * @param string $resource Resource name
+     * @param string $type Content-Type header
      * @param string $body Request Body
      *
      * @return array
      *
-     * @throws RouterException If Request Content-Type is not supported
-     * @throws RouterException If Request Body could not be parsed
+     * @throws RouterException If $type is not supported
+     * @throws RouterException If $body could not be parsed
      */
-    protected function parseBody(string $type, string $body)
+    protected function parseBody(string $resource, string $type, string $body)
     {
-        $content_type = explode(';', $type, 2)[0];
+        $content_type = static::parseContentType($type);
+        $mime = $content_type['mime'] ?? $content_type;
 
-        if ($content_type === '') {
+        if (($content_type['charset'] ?? null) !== null) {
+            $body = mb_convert_encoding(
+                $body,
+                'UTF-8',
+                $content_type['charset']
+            );
+        }
+
+        if ($mime === '') {
             if ($body === '') {
                 return [];
             }
-        } elseif ($content_type === 'application/json') {
+        } elseif ($mime === 'application/json') {
             $data = json_decode($body, true);
             if (!empty($data)) {
-                return $data;
+                return [
+                    'mime' => $mime,
+                    'data' => $data,
+                ];
             }
         } else {
+            if (!$this->safe_method) {
+                $handlers = $this->resources[$resource]['handlers'] ?? [];
+                if (!empty($handlers)) {
+                    $handlers = $handlers[$this->method] ?? null;
+                    if (is_array($handlers)
+                        && array_key_exists($mime, $handlers)
+                    ) {
+                        return [
+                            'mime' => $mime,
+                            'body' => $body,
+                        ];
+                    }
+                }
+            }
+
             $this->sendError(
                 static::ERROR_UNSUPPORTED_MEDIA_TYPE,
-                "Content-Type '$content_type' is not supported"
+                "Media-Type '$mime' is not supported"
             );
         }
 
         $this->sendError(
             static::ERROR_INVALID_PAYLOAD,
-            "Content Body could not be parsed"
+            "Body payload could not be parsed"
         );
+    }
+
+    /**
+     * Parses a Content-Type header
+     *
+     * @param string $content_type Content-Type header to be parsed
+     *
+     * @return string
+     * @return string[] With keys 'mime', and 'charset' and/or 'boundary'
+     */
+    public static function parseContentType(string $content_type)
+    {
+        $directives = array_map('trim', explode(';', $content_type));
+
+        $result = [
+            'mime' => array_shift($directives)
+        ];
+
+        if (empty($directives)) {
+            return $result['mime'];
+        }
+
+        foreach ($directives as $directive) {
+            $parts = explode('=', $directive);
+            $result[$parts[0]] = $parts[1];
+        }
+
+        return $result;
     }
 
     /**
@@ -1411,23 +1446,29 @@ class Router
      */
     protected function parseRoute(string $uri)
     {
-        $result = [];
-
         $route = trim(urldecode(parse_url($uri, PHP_URL_PATH)), '/');
         if ($route === '') {
             return;
         }
+
         $extension = null;
-        if (!empty($this->extensions)) {
-            $extension = pathinfo($route, PATHINFO_EXTENSION);
-            if (array_key_exists($extension, $this->extensions)) {
-                $route = substr($route, 0, (strlen($extension) + 1) * -1);
-            } else {
-                $extension = null;
+        if ($this->safe_method && !empty($this->extensions)) {
+            foreach (array_keys($this->extensions) as $ext) {
+                $ext = ".$ext";
+                $len = strlen($ext) * -1;
+                if (substr($route, $len) === $ext) {
+                    $route = substr($route, 0, $len);
+                    $extension = substr($ext, 1);
+                    break;
+                }
             }
         }
-        $result['extension'] = $extension;
-        $result['route'] = "/$route";
+
+        $result = [
+            'route' => "/$route",
+            'extension' => $extension,
+        ];
+
         $route = explode('/', $route);
 
         $model = $previous = null;
@@ -1448,7 +1489,7 @@ class Router
 
             if (!$this->isPublic(
                     $resource,
-                    ($is_last ? $this->method : null)
+                    ($is_last ? $this->method : static::SAFE_METHODS)
                 )
             ) {
                 $code = static::ERROR_UNAUTHORIZED;
@@ -1460,18 +1501,16 @@ class Router
 
                     if ($authorization !== null) {
                         $methods = $authorization->methods;
-                        $allow = $methods === null
+                        $allowed = $methods === null
                             || in_array(
                                 ($is_last ? $this->method : 'GET'),
                                 json_decode($methods, true)
                             );
 
-                        if ($allow) {
+                        if ($allowed) {
                             $code = null;
-                            $authorized = $authorization->filter ?? null;
-                            if ($authorized !== null) {
-                                $authorized = json_decode($authorized, true);
-                            }
+                            $filter = $authorization->filter;
+                            $authorized = json_decode($filter, true);
                         }
                     }
                 }
@@ -1700,13 +1739,13 @@ class Router
     /**
      * Checks if Response is modified from Client's cache
      *
-     * It adds caching Headers
+     * It adds caching headers
      *
      * @param Response $response Response to be checked
      * @param string   $e_tags   Request If-None-Match Header
      * @param integer  $max_age  Resource max_age
      *
-     * @return Response With caching Headers or with Not Modified status
+     * @return Response With caching headers or with Not Modified status
      *
      * @throws RouterException If 'cache_method' config is invalid
      */
@@ -1785,43 +1824,33 @@ class Router
     }
 
     /**
-     * Computes Resource Content Types
+     * Compares content types in an Accept header with a list of available types
      *
-     * NOTE:
-     * - It caches results
+     * @param string   $accept    Accept header
+     * @param string[] $available Available content types
      *
-     * @param string $resource Resource name
-     *
-     * @return array[]
-     *
-     * @throws RouterException If resource's Content-Type is invalid
+     * @return float[] With 'type' => priority
      */
-    protected function computeResourceTypes(string $resource)
+    public static function compareAccept(string $accept, array $available)
     {
-        $cached = $this->cache['resource_types'][$resource] ?? null;
-        if ($cached !== null) {
-            return $cached;
-        }
-
-        $resource_types = array_replace_recursive(
-            $this->default_content_type,
-            $this->resources[$resource]['content_type'] ?? []
-        );
-        foreach ($resource_types as $resource_type => &$data) {
-            if (!is_array($data)) {
-                $data = ['handler' => $data];
+        $result = [];
+        foreach (static::parseAccept($accept) as $type => $priority) {
+            if (strpos($type, '*') === false) {
+                if (in_array($type, $available)) {
+                    $result[$type] = max($result[$type] ?? 0, $priority);
+                }
+            } else {
+                foreach ($available as $available_type) {
+                    if (fnmatch($type, $available_type)) {
+                        $result[$available_type] = max(
+                            $result[$available_type] ?? 0,
+                            $priority
+                        );
+                    }
+                }
             }
-            if (!array_key_exists('handler', $data)) {
-                $message = "Content-Type '$resource_type' for resource "
-                    . "'$resource' is invalid";
-                $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
-            }
-            $data['priority'] = $data['priority'] ?? 1;
         }
-        unset($data);
-
-        $this->cache['resource_types'][$resource] = $resource_types;
-        return $resource_types;
+        return $result;
     }
 
     /**
@@ -1840,36 +1869,98 @@ class Router
     }
 
     /**
+     * Determines external handler for a Resource and executes it
+     *
+     * @param Resource $resource Resource to be sent to handler
+     *
+     * @return boolean For success or failure
+     *
+     * @throws RouterException If handler is invalid
+     */
+    protected function externalHandler(Resource $resource)
+    {
+        $handlers = $this->resources[$resource->name]['handlers'] ?? [];
+
+        if (!empty($handlers)) {
+            if ($this->safe_method) {
+                $handlers = $handlers['GET'] ?? null;
+                if (is_array($handlers)) {
+                    $handlers = $this->getAvailableTypes($resource->name);
+                    $type = $resource->content_type;
+                }
+            } else {
+                $handlers = $handlers[$this->method] ?? null;
+                if (is_array($handlers)) {
+                    $type = $resource->payload['mime'];
+                }
+            }
+
+            if (isset($type)) {
+                $handler = $handlers[$type];
+                if (is_array($handler)) {
+                    $handler = $handler[$resource->kind];
+                }
+                if ($type === 'application/json' && $handler == '__DEFAULT__') {
+                    $handler = null;
+                }
+            } else {
+                $handler = $handlers;
+            }
+
+            if ($handler !== null) {
+                if (is_callable($handler)) {
+                    if ($this->method === 'HEAD') {
+                        ob_start();
+                        $handler($resource);
+                        ob_end_clean();
+                    } else {
+                        $handler($resource);
+                        ob_flush();
+                    }
+                    return true;
+                }
+                $this->sendError(static::ERROR_INTERNAL_SERVER, sprintf(
+                    "Resource '%s' has invalid %s handler: '%s' (%s request)",
+                    $resource->name,
+                    $this->method,
+                    $handler,
+                    $resource->kind
+                ));
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns key for first highest value
      *
      * @param float[] $list List of numbers between min and max
-     * @param float   $min  Min value to test
-     * @param float   $max  Max value to test
+     * @param float   $min  Min value to test (default is 0)
+     * @param float   $max  Max value to test (default is 1)
      *
-     * @return string
-     * @return null   If no value was higher than $min
+     * @return mixed $list key
+     * @return null  If no value was higher than $min
      */
-    protected static function firstHigher(
+    public static function firstHigher(
         array $list,
         float $min = null,
         float $max = null
     ) {
-        $min = $min ?? 0;
-        $max = $max ?? 1;
-
-        $bounded_list = array_merge([$min, $max], $list);
+        $bounded_list = array_merge([$min ?? 0, $max ?? 1], $list);
 
         $min = min($bounded_list);
         $max = max($bounded_list);
 
         $result = null;
         $higher = $min;
-        foreach ($list as $id => $value) {
+
+        foreach ($list as $key => $value) {
             $value = Utils::numberLimit($value, $min, $max);
             if ($value == $max) {
-                return $id;
+                return $key;
             } elseif ($value > $higher) {
-                $result = $id;
+                $result = $key;
                 $higher = $value;
             }
         }
@@ -1878,40 +1969,174 @@ class Router
     }
 
     /**
-     * Returns a list of authorized resources
+     * Determines an accepted Content-Type for a Resource
      *
-     * @param int             $user    Authenticated user id
-     * @param string|string[] $methods Allowed HTTP methods
+     * NOTE:
+     * - If $resource does not comply to $accept, but at least one of its
+     *   available content types is not forbidden by $accept (i.e. ';q=0'),
+     *   it is returned. It is better to respond something the client doesn't
+     *   complain about than a useless error
+     *
+     * @param string $resource Resource name
+     * @param string $accept   Accept header
+     *
+     * @return string
+     *
+     * @throws RouterException If $resource has invalid Content-Type
+     * @throws RouterException If no content type is acceptable
+     */
+    protected function getAcceptedType(string $resource, string $accept)
+    {
+        $available = array_keys($this->getAvailableTypes($resource));
+        if (empty($available)) {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                "Resource '$resource' has invalid GET handlers"
+            );
+        }
+
+        $list = static::compareAccept($accept, $available);
+        if (empty($list)) {
+            return $available[0];
+        }
+
+        $result = static::firstHigher($list);
+        if ($result !== null) {
+            return $result;
+        }
+
+        $forbidden = array_filter($list, function ($value) {
+            return $value === 0;
+        });
+        $available = array_diff($available, array_keys($forbidden));
+
+        if (empty($available)) {
+            $message = "Resource '$resource' can not generate content"
+                . ' complying to Accept header';
+            $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+        }
+
+        return array_values($available)[0];
+    }
+
+    /**
+     * Returns a list of allowed methods for a resource
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param string $resource Resource name
      *
      * @return string[]
+     *
+     * @throws \DomainException If $resource is invalid
      */
-    protected function getAuthorizedResources(int $user, $methods)
+    protected function getAllowedMethods(string $resource)
     {
-        $methods = (array) $methods;
+        $cached = $this->cache['allowed_methods'][$resource] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
 
-        $resources = Authorization::dump(
-            [
-                'user' => $user,
-                'OR' => [
-                    'methods' => null,
-                    'methods[REGEXP]' => '"' . implode('"|"', $methods) . '"',
+        $resource_data = $this->resources[$resource] ?? null;
+        if ($resource_data === null) {
+            throw new \DomainException("Invalid resource '$resource'");
+        }
+
+        $allow = $this->implemented_methods;
+
+        $methods = (array) ($resource_data['methods'] ?? null);
+        if (!empty($methods)) {
+            $allow = array_intersect(
+                $allow,
+                array_merge($methods, ['OPTIONS'])
+            );
+        }
+
+        $this->cache['allowed_methods'][$resource] = $allow;
+        return $allow;
+    }
+
+    /**
+     * Computes GET Resource's content types
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param string $resource Resource name
+     *
+     * @return mixed[]
+     */
+    protected function getAvailableTypes(string $resource)
+    {
+        $cached = $this->cache['available_types'][$resource] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $types = $this->resources[$resource]['handlers']['GET'] ?? [];
+        $types = (is_array($types))
+            ? array_filter(array_replace($this->default_content_type, $types))
+            : [];
+
+        $this->cache['available_types'][$resource] = $types;
+        return $types;
+    }
+
+    /**
+     * Returns authorized resources for the authenticated user and their filters
+     *
+     * @param string|string[] $methods Which methods to test
+     *                                 Default is requested method
+     *
+     * @return mixed[] With 'resource' => filter
+     */
+    protected function getAuthorizedResources($methods = null)
+    {
+        $resources = [];
+
+        if ($this->auth instanceof Authentication) {
+            $allow = (array) ($methods ?? $this->method);
+
+            $authorizations = Authorization::dump(
+                [
+                    'user' => $this->auth->id,
                 ],
-            ],
-            'resource'
-        );
+                [
+                    'resource',
+                    'methods',
+                    'filter',
+                ]
+            );
 
-        foreach ($resources as $id => $resource) {
-            $data = $this->resources[$resource] ?? null;
-            $allow = (array) ($data['methods'] ?? null);
-            $allow = (empty($allow))
-                ? $this->implemented_methods
-                : array_intersect($this->implemented_methods, $allow);
-            if ($data === null
-                || empty(array_intersect($allow, $methods))
-                && !$this->isPublic($resource, $methods)
-            ) {
-                unset($resources[$id]);
+            foreach ($authorizations as $authorization) {
+                $resource = $authorization['resource'];
+                if (array_key_exists($resource, $this->resources)) {
+                    if ($this->isPublic($resource, $methods)) {
+                        $resources[$resource] = null;
+                    } elseif (!empty(array_intersect(
+                        $this->getAllowedMethods($resource),
+                        array_merge(
+                            $authorization['methods'] ?? [],
+                            $allow
+                        )
+                    ))) {
+                        $resources[$resource] = $authorization['filter'];
+                    }
+                }
             }
+        } else {
+            $resources = array_keys($this->resources);
+
+            if ($this->auth === false) {
+                foreach ($resources as $id => $resource) {
+                    if (!$this->isPublic($resource, $methods)) {
+                        unset($resources[$id]);
+                    }
+                }
+            }
+
+            $resources = array_fill_keys(array_values($resources), null);
         }
 
         return $resources;
@@ -1999,11 +2224,11 @@ class Router
     }
 
     /**
-     * Tells if a resource has public access
+     * Tells if a resource's method has public access
      *
      * @param string          $resource Resource name
      * @param string|string[] $methods  Which methods to test
-     *                                  Default: GET and HEAD
+     *                                  Default is requested method
      *
      * @return boolean For success or failure
      */
@@ -2013,20 +2238,21 @@ class Router
             return true;
         }
 
-        $data = $this->resources[$resource];
-        $allow = (array) ($data['methods'] ?? $this->implemented_methods);
-        $public = $data['public'] ?? $this->default_publicity;
+        $resource_data = $this->resources[$resource] ?? null;
+        if ($resource_data === null) {
+            return false;
+        }
 
+        $public = $resource_data['public'] ?? $this->default_publicity;
         if (is_string($public)) {
             $public = [$public];
         }
-        if (is_array($public)) {
-            $allow = array_intersect($allow, $public);
-        }
 
-        $allow = array_intersect($allow, (array) ($methods ?? ['GET', 'HEAD']));
+        $methods = (array) ($methods ?? $this->method);
 
-        return !($public === false || empty($allow));
+        return (is_array($public))
+            ? !empty(array_intersect($public, $methods))
+            : (bool) $public;
     }
 
     /**
@@ -2058,7 +2284,7 @@ class Router
      *                 Key in $model_class
      * @return null    On failure
      */
-    protected static function reverseForeignKey(
+    public static function reverseForeignKey(
         string $model_class,
         Model $target
     ) {

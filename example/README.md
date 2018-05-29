@@ -1,6 +1,7 @@
 # Example
 
-This directory would be your `public/` with the website you are developing.
+This directory would be your `public/` Document Root with the website you are
+developing.
 
 There is a `bootstrap.php` which should be required by every `.php` file. It
 prepares the environment for your scripts, like requiring composer's autoload
@@ -22,8 +23,9 @@ you use SSL.
 The client needs to request data from `api/`.
 
 If you configure `authentication` in `api/router.json`, the client needs to
-authenticate at `auth/` and send the JWT in a Bearer `Authorization` Header to
-other routes. If `authentication` is not configured, `auth/` will return `204`.
+authenticate at `api/auth/` and send the JWT in a Bearer `Authorization` Header
+to other routes. If `authentication` is not configured, `api/auth/` will return
+`204`.
 
 > The best is _to follow_ this example to create an API for a project you
 > already have, with some models and a configured database.
