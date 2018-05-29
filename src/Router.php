@@ -1865,33 +1865,31 @@ class Router
      * Returns key for first highest value
      *
      * @param float[] $list List of numbers between min and max
-     * @param float   $min  Min value to test
-     * @param float   $max  Max value to test
+     * @param float   $min  Min value to test (default is 0)
+     * @param float   $max  Max value to test (default is 1)
      *
-     * @return string
-     * @return null   If no value was higher than $min
+     * @return mixed $list key
+     * @return null  If no value was higher than $min
      */
     protected static function firstHigher(
         array $list,
         float $min = null,
         float $max = null
     ) {
-        $min = $min ?? 0;
-        $max = $max ?? 1;
-
-        $bounded_list = array_merge([$min, $max], $list);
+        $bounded_list = array_merge([$min ?? 0, $max ?? 1], $list);
 
         $min = min($bounded_list);
         $max = max($bounded_list);
 
         $result = null;
         $higher = $min;
-        foreach ($list as $id => $value) {
+
+        foreach ($list as $key => $value) {
             $value = Utils::numberLimit($value, $min, $max);
             if ($value == $max) {
-                return $id;
+                return $key;
             } elseif ($value > $higher) {
-                $result = $id;
+                $result = $key;
                 $higher = $value;
             }
         }
