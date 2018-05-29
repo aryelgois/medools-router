@@ -1291,75 +1291,33 @@ class Router
     /**
      * Parses Accept header
      *
-     * NOTE:
-     * - If $resource does not comply to $accept, but it does not forbid any of
-     *   $resource's content types (i.e. ';q=0'), this function returns the
-     *   first $resource's content type with highest priority. It is better to
-     *   return something the client doesn't complain about than a useless error
+     * @param string $accept Accept header
      *
-     * @param string $resource Resource name
-     * @param string $accept   Request Accept
-     *
-     * @return string
-     *
-     * @throws RouterException If Resource has invalid Content-Type
-     * @throws RouterException If no Content-Type is acceptable
+     * @return float[] With 'type' => priority
+     *                 Keys may contain '*'
      */
-    protected function parseAccept(string $resource, string $accept)
+    protected static function parseAccept(string $accept)
     {
-        $available_types = [];
-        $resource_types = $this->computeResourceTypes($resource);
-        foreach ($resource_types as $resource_type => $data) {
-            $available_types[$resource_type] = $data['priority'];
-        }
+        $result = [];
 
-        $list = [];
-        $accept_types = explode(',', $accept);
-        foreach ($accept_types as $fragment) {
-            $fragment = explode(';', $fragment);
-            $accept_type = trim($fragment[0]);
+        foreach (explode(',', $accept) as $directive) {
+            $parts = explode(';', $directive, 2);
+
+            $type = trim($parts[0]);
+
             $priority = ((float) filter_var(
-                $fragment[1] ?? 1,
+                $parts[1] ?? 1,
                 FILTER_SANITIZE_NUMBER_FLOAT,
                 FILTER_FLAG_ALLOW_FRACTION
             ));
             $priority = Utils::numberLimit($priority, 0, 1);
-            if (strpos($accept_type, '*') === false) {
-                if (array_key_exists($accept_type, $available_types)) {
-                    $list[$accept_type] = max(
-                        $list[$accept_type] ?? 0,
-                        $priority * $available_types[$accept_type]
-                    );
-                }
-            } else {
+
+            if (strpos($type, '*') !== false) {
                 $priority -= 0.0001;
-                foreach ($available_types as $resource_type => $value) {
-                    if ($value > 0 && fnmatch($accept_type, $resource_type)) {
-                        $list[$resource_type] = max(
-                            $list[$resource_type] ?? 0,
-                            $priority * $value
-                        );
-                    }
-                }
             }
+            $result[$type] = $priority;
         }
 
-        if (empty($list)) {
-            $result = static::firstHigher($available_types);
-            if ($result === null) {
-                $this->sendError(
-                    static::ERROR_INTERNAL_SERVER,
-                    "Resource '$resource' has invalid Content-Type"
-                );
-            }
-        } else {
-            $result = static::firstHigher($list);
-            if ($result === null) {
-                $message = "Resource '$resource' can not generate content"
-                    . ' complying to Accept header';
-                $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
-            }
-        }
         return $result;
     }
 
@@ -1813,6 +1771,36 @@ class Router
     }
 
     /**
+     * Compares content types in an Accept header with a list of available types
+     *
+     * @param string   $accept    Accept header
+     * @param string[] $available Available content types
+     *
+     * @return float[] With 'type' => priority
+     */
+    protected static function compareAccept(string $accept, array $available)
+    {
+        $result = [];
+        foreach (static::parseAccept($accept) as $type => $priority) {
+            if (strpos($type, '*') === false) {
+                if (in_array($type, $available)) {
+                    $result[$type] = max($result[$type] ?? 0, $priority);
+                }
+            } else {
+                foreach ($available as $available_type) {
+                    if (fnmatch($type, $available_type)) {
+                        $result[$available_type] = max(
+                            $result[$available_type] ?? 0,
+                            $priority
+                        );
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Counts rows in Resource's table
      *
      * @param string  $resource Resource name
@@ -1861,6 +1849,57 @@ class Router
         }
 
         return $result;
+    }
+
+    /**
+     * Determines an accepted Content-Type for a Resource
+     *
+     * NOTE:
+     * - If $resource does not comply to $accept, but at least one of its
+     *   available content types is not forbidden by $accept (i.e. ';q=0'),
+     *   it is returned. It is better to respond something the client doesn't
+     *   complain about than a useless error
+     *
+     * @param string $resource Resource name
+     * @param string $accept   Accept header
+     *
+     * @return string
+     *
+     * @throws RouterException If $resource has invalid Content-Type
+     * @throws RouterException If no content type is acceptable
+     */
+    protected function getAcceptedType(string $resource, string $accept)
+    {
+        $available = array_keys($this->getAvailableTypes($resource));
+        if (empty($available)) {
+            $this->sendError(
+                static::ERROR_INTERNAL_SERVER,
+                "Resource '$resource' has invalid GET handlers"
+            );
+        }
+
+        $list = static::compareAccept($accept, $available);
+        if (empty($list)) {
+            return $available[0];
+        }
+
+        $result = static::firstHigher($list);
+        if ($result !== null) {
+            return $result;
+        }
+
+        $forbidden = array_filter($list, function ($value) {
+            return $value === 0;
+        });
+        $available = array_diff($available, array_keys($forbidden));
+
+        if (empty($available)) {
+            $message = "Resource '$resource' can not generate content"
+                . ' complying to Accept header';
+            $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+        }
+
+        return array_values($available)[0];
     }
 
     /**

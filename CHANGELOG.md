@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support to multipart extensions
 - `Router->safe_method`
 - `handlers` resource config
+- `Router::compareAccept()`
+- `Router::getAcceptedType()`
 
 ### Changed
 - Update dependencies
@@ -25,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Rewrite `Router::getAuthorizedResources()`
 - Update `Router::requestRoot()`
 - Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
+- Split `Router::parceAccept()`
 
 ### Deprecated
 
