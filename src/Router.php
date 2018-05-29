@@ -1807,46 +1807,6 @@ class Router
     }
 
     /**
-     * Computes Resource Content Types
-     *
-     * NOTE:
-     * - It caches results
-     *
-     * @param string $resource Resource name
-     *
-     * @return array[]
-     *
-     * @throws RouterException If resource's Content-Type is invalid
-     */
-    protected function computeResourceTypes(string $resource)
-    {
-        $cached = $this->cache['resource_types'][$resource] ?? null;
-        if ($cached !== null) {
-            return $cached;
-        }
-
-        $resource_types = array_replace_recursive(
-            $this->default_content_type,
-            $this->resources[$resource]['content_type'] ?? []
-        );
-        foreach ($resource_types as $resource_type => &$data) {
-            if (!is_array($data)) {
-                $data = ['handler' => $data];
-            }
-            if (!array_key_exists('handler', $data)) {
-                $message = "Content-Type '$resource_type' for resource "
-                    . "'$resource' is invalid";
-                $this->sendError(static::ERROR_INTERNAL_SERVER, $message);
-            }
-            $data['priority'] = $data['priority'] ?? 1;
-        }
-        unset($data);
-
-        $this->cache['resource_types'][$resource] = $resource_types;
-        return $resource_types;
-    }
-
-    /**
      * Counts rows in Resource's table
      *
      * @param string  $resource Resource name
@@ -1933,6 +1893,32 @@ class Router
 
         $this->cache['allowed_methods'][$resource] = $allow;
         return $allow;
+    }
+
+    /**
+     * Computes GET Resource's content types
+     *
+     * NOTE:
+     * - It caches results
+     *
+     * @param string $resource Resource name
+     *
+     * @return mixed[]
+     */
+    protected function getAvailableTypes(string $resource)
+    {
+        $cached = $this->cache['available_types'][$resource] ?? null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $types = $this->resources[$resource]['handlers']['GET'] ?? [];
+        $types = (is_array($types))
+            ? array_filter(array_replace($this->default_content_type, $types))
+            : [];
+
+        $this->cache['available_types'][$resource] = $types;
+        return $types;
     }
 
     /**

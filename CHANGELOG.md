@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update `Router::isPublic()`
 - Rewrite `Router::getAuthorizedResources()`
 - Update `Router::requestRoot()`
+- Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
 
 ### Deprecated
 
