@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Security
 
 
+## [0.2.1] - 2018-05-29
+
+### Fixed
+- Add `Removed` section in 0.2.0 Changelog
+
+
 ## [0.2.0] - 2018-05-29
 
 ### Added
@@ -54,6 +60,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Route extensions are only used in `GET` and `HEAD` requests
 - Allow using a different Router in the Controller
 - `Router::requestRoot()` receive headers and request payload
+
+### Removed
+- `content_type` resource config
 
 ### Fixed
 - Composer description
@@ -90,7 +99,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Namespace to `aryelgois\MedoolsRouter`
 
 
-[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.2.0...develop
+[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.2.1...develop
+[0.2.1]: https://github.com/aryelgois/medools-router/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/aryelgois/medools-router/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...v0.1.0
 
