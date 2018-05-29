@@ -20,7 +20,7 @@ use aryelgois\Medools\Exceptions\UnknownColumnException;
 class Resource
 {
     /**
-     * Key for Router->$resources
+     * Key for Router->resources
      *
      * @var string
      */
