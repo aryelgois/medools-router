@@ -218,6 +218,29 @@ an array with:
   Note that these content types are only used in `GET` and `HEAD` requests. The
   handler does not need to worry about `HEAD` requests
 
+- `handlers` _(mixed[])_: Map of HTTP methods to php functions that process the
+  Request
+
+  - Several levels of arrays are allowed but not required, in the order:
+    `HTTP method => Content type => Resource kind` (resource or collection). The
+    leaves must be the function names
+
+  - These functions receive a `Resource` and must be capable of generating all
+    the output (both Headers and Body) for the Response. Exceptions are catched
+    by the Router
+
+  - The same handlers for `GET` are used for `HEAD` requests, and a `HEAD` key
+    is ignored. Content types for `GET` are related to the accepted Response,
+    while other methods use them with the Request's payload
+
+  - All methods implicitly have an internal `application/json` handler. If a
+    method defines a single handler (i.e. a `string`) or if a `application/json`
+    key is set, the internal handler is disabled for that method (unless using
+    the magic value `__DEFAULT__`)
+
+  - When defining a single Resource kind (or setting one to `null`), requesting
+    the disabled one is not acceptable
+
 - `filters` _(string|string[])_: List of columns that can be used as query
   parameters to filter collection requests. It also accepts a string of a
   special fields group ([see fields query parameter][Collection or Resource]),

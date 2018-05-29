@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Column types in Authorization
 - Support to multipart extensions
 - `Router->safe_method`
+- `handlers` resource config
 
 ### Changed
 - Update dependencies
