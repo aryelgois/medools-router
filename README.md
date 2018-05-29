@@ -59,7 +59,8 @@ has a foreign key to the previous resource, that has a foreign key to the
 previous one, and so on. The `id` is only used in the first resource.
 
 > \* If `resource_1` has multiple foreign columns for `resource`, only the first
-> one is used
+> one is used. As a work around, you can use
+> [Collection query parameters][Collection request] to filter the correct column
 
 
 ## Root Route
@@ -307,7 +308,7 @@ The following HTTP methods are implemented by the Router class:
 - `GET`: By default, responses contain a JSON representation of the requested
   route
 
-  - Resource requests receive a `Link` header listing the location of foreign
+  - Resource requests include a `Link` header listing the location of foreign
     models
 
   - Collection requests include a `Link` header for pagination and a
