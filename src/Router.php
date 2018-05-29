@@ -1437,7 +1437,7 @@ class Router
         }
 
         $extension = null;
-        if (!empty($this->extensions)) {
+        if ($this->safe_method && !empty($this->extensions)) {
             foreach (array_keys($this->extensions) as $ext) {
                 $ext = ".$ext";
                 $len = strlen($ext) * -1;

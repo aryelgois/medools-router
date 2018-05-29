@@ -159,7 +159,9 @@ in it. The array may contain:
   It allows overriding browser's `Accept` header with an extension in the URL.
   Fill it with extensions for custom content types your resources use
 
-  **NOTE**: Unlisted extensions may invalidate the route
+  Note that it is only checked by safe methods and is only useful to resources
+  that define custom `GET` handlers. Using unknown extensions or when they are
+  not expected may invalidate the route
 
 - `implemented_methods` _(string[])_: List of HTTP methods implemented by the
   API. You can limit which methods can be used, but to add more methods you
@@ -214,6 +216,8 @@ an array with:
   - The same handlers for `GET` are used for `HEAD` requests, and a `HEAD` key
     is ignored. Content types for `GET` are related to the accepted Response,
     while other methods use them with the Request's payload
+
+  - `GET` content types enable their related extensions in the route endpoint
 
   - All methods implicitly have an internal `application/json` handler. If a
     method defines a single handler (i.e. a `string`) or if a `application/json`
