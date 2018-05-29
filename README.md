@@ -266,7 +266,8 @@ it gathers request data:
     Possible types are Basic and Bearer
 
   - `X-HTTP-Method-Override`: If your clients can not work with `PUT`, `PATCH`
-    or `DELETE`, they can use it to replace `POST` method
+    or `DELETE`, they can use it to replace `POST` method. It is enabled by
+    `ENABLE_METHOD_OVERRIDE`
 
   - `Content-Type`: Data in the request payload is expected to be
     `application/json` by default. Resources may specify more types they read

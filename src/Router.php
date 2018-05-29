@@ -84,6 +84,13 @@ class Router
     ];
 
     /**
+     * If a POST request can be replaced with a X-Http-Method-Override header
+     *
+     * @const boolean
+     */
+    const ENABLE_METHOD_OVERRIDE = true;
+
+    /**
      * Maps filter operators in query parameters to their Medoo counterpart
      *
      * NOTE:
@@ -650,7 +657,9 @@ class Router
             'Bearer'
         );
 
-        if (strcasecmp($method, 'POST') === 0) {
+        if (static::ENABLE_METHOD_OVERRIDE
+            && strcasecmp($method, 'POST') === 0
+        ) {
             $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
         }
         $this->method = strtoupper($actual_method ?? $method);
