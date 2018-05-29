@@ -1431,11 +1431,14 @@ class Router
         }
         $extension = null;
         if (!empty($this->extensions)) {
-            $extension = pathinfo($route, PATHINFO_EXTENSION);
-            if (array_key_exists($extension, $this->extensions)) {
-                $route = substr($route, 0, (strlen($extension) + 1) * -1);
-            } else {
-                $extension = null;
+            foreach (array_keys($this->extensions) as $ext) {
+                $ext = ".$ext";
+                $len = strlen($ext) * -1;
+                if (substr($route, $len) === $ext) {
+                    $route = substr($route, 0, $len);
+                    $extension = substr($ext, 1);
+                    break;
+                }
             }
         }
         $result['extension'] = $extension;
