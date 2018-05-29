@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Router::compareAccept()`
 - `Router::getAcceptedType()`
 - `Router::parseContentType()`
+- `Resouce->payload`
 
 ### Changed
 - Update dependencies
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update `Router::requestRoot()`
 - Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
 - Split `Router::parceAccept()`
+- Update `Router::parseBody()`
 
 ### Deprecated
 

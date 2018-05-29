@@ -695,9 +695,19 @@ class Router
             }
 
             parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-            $data = $this->parseBody($headers['Content-Type'] ?? '', $body);
             $resource['query'] = $query;
-            $resource['data'] = $data;
+
+            $payload = $this->parseBody(
+                $resource_name,
+                $headers['Content-Type'] ?? '',
+                $body
+            );
+            if (array_key_exists('body', $payload)) {
+                $resource['payload'] = $payload;
+                $resource['data'] = null;
+            } else {
+                $resource['data'] = $payload['data'] ?? [];
+            }
 
             if ($this->safe_method) {
                 $resource_types = $this->computeResourceTypes($resource_name);
@@ -1324,37 +1334,65 @@ class Router
     /**
      * Parses request body
      *
-     * @param string $type Request Content-Type
+     * @param string $resource Resource name
+     * @param string $type Content-Type header
      * @param string $body Request Body
      *
      * @return array
      *
-     * @throws RouterException If Request Content-Type is not supported
-     * @throws RouterException If Request Body could not be parsed
+     * @throws RouterException If $type is not supported
+     * @throws RouterException If $body could not be parsed
      */
-    protected function parseBody(string $type, string $body)
+    protected function parseBody(string $resource, string $type, string $body)
     {
-        $content_type = explode(';', $type, 2)[0];
+        $content_type = static::parseContentType($type);
+        $mime = $content_type['mime'] ?? $content_type;
 
-        if ($content_type === '') {
+        if (($content_type['charset'] ?? null) !== null) {
+            $body = mb_convert_encoding(
+                $body,
+                'UTF-8',
+                $content_type['charset']
+            );
+        }
+
+        if ($mime === '') {
             if ($body === '') {
                 return [];
             }
-        } elseif ($content_type === 'application/json') {
+        } elseif ($mime === 'application/json') {
             $data = json_decode($body, true);
             if (!empty($data)) {
-                return $data;
+                return [
+                    'mime' => $mime,
+                    'data' => $data,
+                ];
             }
         } else {
+            if (!$this->safe_method) {
+                $handlers = $this->resources[$resource]['handlers'] ?? [];
+                if (!empty($handlers)) {
+                    $handlers = $handlers[$this->method] ?? null;
+                    if (is_array($handlers)
+                        && array_key_exists($mime, $handlers)
+                    ) {
+                        return [
+                            'mime' => $mime,
+                            'body' => $body,
+                        ];
+                    }
+                }
+            }
+
             $this->sendError(
                 static::ERROR_UNSUPPORTED_MEDIA_TYPE,
-                "Content-Type '$content_type' is not supported"
+                "Media-Type '$mime' is not supported"
             );
         }
 
         $this->sendError(
             static::ERROR_INVALID_PAYLOAD,
-            "Content Body could not be parsed"
+            "Body payload could not be parsed"
         );
     }
 
