@@ -675,7 +675,7 @@ class Router
             $resource_name = $resource['name'];
             $resource_data = $this->resources[$resource_name];
             $resource_extension = $resource['extension'];
-            $resource_accept = $this->extensions[$resource_extension] ?? null;
+            $prefered_type = $this->extensions[$resource_extension] ?? null;
 
             $methods = (array) ($resource_data['methods'] ?? null);
             if (!empty($methods)) {
@@ -710,30 +710,40 @@ class Router
             }
 
             if ($this->safe_method) {
-                $resource_types = $this->computeResourceTypes($resource_name);
-                if ($resource_accept !== null
-                    && !array_key_exists($resource_accept, $resource_types)
-                ) {
-                    $message = "Resource '$resource_name' can not generate "
-                        . "content for '$resource_extension' extension";
-                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                $available = $this->getAvailableTypes($resource_name);
+
+                if ($prefered_type === null) {
+                    $accepted = (empty($available))
+                        ? null
+                        : $accepted = $this->getAcceptedType(
+                            $resource_name,
+                            $headers['Accept'] ?? '*/*'
+                        );
+                } else {
+                    if (!array_key_exists($prefered_type, $available)) {
+                        $message = "Resource '$resource_name' can not generate "
+                            . "content for '$resource_extension' extension";
+                        $this->sendError(
+                            static::ERROR_NOT_ACCEPTABLE,
+                            $message
+                        );
+                    }
+                    $accepted = $prefered_type;
                 }
+                $resource['content_type'] = $accepted;
 
-                $resource['content_type'] = $accepted = $this->parseAccept(
-                    $resource_name,
-                    $resource_accept ?? $headers['Accept'] ?? '*/*'
-                );
-
-                $handlers = $resource_types[$accepted]['handler'];
-                if (is_array($handlers)
-                    && (!array_key_exists($resource['kind'], $handlers)
-                        || $accepted !== 'application/json'
-                        && $handlers[$resource['kind']] === null
-                    )
-                ) {
-                    $message = "Resource '$resource_name' can not generate "
-                        . $resource['content_type'] . ' ' . $resource['kind'];
-                    $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+                if (!empty($available)) {
+                    $handler = $available[$accepted];
+                    if (is_array($handler)
+                        && ($handler[$resource['kind']] ?? null) === null
+                    ) {
+                        $message = "Resource '$resource_name' can not generate "
+                            . $accepted . ' ' . $resource['kind'];
+                        $this->sendError(
+                            static::ERROR_NOT_ACCEPTABLE,
+                            $message
+                        );
+                    }
                 }
 
                 if (($resource['content_location'] ?? null) !== null) {

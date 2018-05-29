@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Rewrite `Router::computeResourceTypes()` as `Router::getAvailableTypes()`
 - Split `Router::parceAccept()`
 - Update `Router::parseBody()`
+- Update `Router::run()`
 
 ### Deprecated
 
