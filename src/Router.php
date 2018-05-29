@@ -1287,7 +1287,7 @@ class Router
      * @return float[] With 'type' => priority
      *                 Keys may contain '*'
      */
-    protected static function parseAccept(string $accept)
+    public static function parseAccept(string $accept)
     {
         $result = [];
 
@@ -1385,7 +1385,7 @@ class Router
      * @return string
      * @return string[] With keys 'mime', and 'charset' and/or 'boundary'
      */
-    protected static function parseContentType(string $content_type)
+    public static function parseContentType(string $content_type)
     {
         $directives = array_map('trim', explode(';', $content_type));
 
@@ -1825,7 +1825,7 @@ class Router
      *
      * @return float[] With 'type' => priority
      */
-    protected static function compareAccept(string $accept, array $available)
+    public static function compareAccept(string $accept, array $available)
     {
         $result = [];
         foreach (static::parseAccept($accept) as $type => $priority) {
@@ -1936,7 +1936,7 @@ class Router
      * @return mixed $list key
      * @return null  If no value was higher than $min
      */
-    protected static function firstHigher(
+    public static function firstHigher(
         array $list,
         float $min = null,
         float $max = null
@@ -2278,7 +2278,7 @@ class Router
      *                 Key in $model_class
      * @return null    On failure
      */
-    protected static function reverseForeignKey(
+    public static function reverseForeignKey(
         string $model_class,
         Model $target
     ) {
