@@ -337,6 +337,7 @@ class Router
      *
      * @throws RouterException If $resources is empty
      * @throws RouterException If any $resource does not define a Model class
+     * @throws RouterException If any $resource handlers list is invalid
      * @throws RouterException If any $config key is invalid
      * @throws RouterException If any $config has invalid type
      */
@@ -362,6 +363,14 @@ class Router
                 $this->sendError(
                     static::ERROR_INTERNAL_SERVER,
                     "Resource '$resource' does not define a model class"
+                );
+            }
+            if (array_key_exists('handlers', $data)
+                && !is_array($data['handlers'])
+            ) {
+                $this->sendError(
+                    static::ERROR_INTERNAL_SERVER,
+                    "Handler list for '$resource' is invalid"
                 );
             }
             $this->resources[$resource] = $data;
