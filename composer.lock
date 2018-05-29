@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "86e645c74fe76ed34f46c587ecce55c6",
+    "content-hash": "e600f87400b515bf5de6c1842caf1661",
     "packages": [
         {
             "name": "aryelgois/medools",
