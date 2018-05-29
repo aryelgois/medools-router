@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+
+## [0.2.0] - 2018-05-29
+
 ### Added
 - Repository title
 - `from_globals()`
@@ -40,10 +43,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Allow using a different Router in the Controller
 - `Router::requestRoot()` receive headers and request payload
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Composer description
 - Comparison operator
@@ -52,7 +51,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - External handler output
 - Authentication's invalid type error message
 
-### Security
 
 ## [0.1.0] - 2018-03-31
 
@@ -80,7 +78,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Namespace to `aryelgois\MedoolsRouter`
 
 
-[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.1.0...develop
+[Unreleased]: https://github.com/aryelgois/medools-router/compare/v0.2.0...develop
+[0.2.0]: https://github.com/aryelgois/medools-router/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aryelgois/medools-router/compare/d281bb5dbc8c58b28db680b3700664217a88eb6d...v0.1.0
 
 [aryelgois/medools]: https://github.com/aryelgois/Medools
