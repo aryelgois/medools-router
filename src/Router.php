@@ -826,7 +826,7 @@ class Router
             ?? [];
         if (is_string($filters)) {
             if ($filters === 'ALL') {
-                $filters = $resource->model_class::COLUMNS;
+                $filters = $resource->model_class::getColumns();
             } else {
                 $special = $resource->getSpecialFields();
                 if (array_key_exists($filters, $special)) {
