@@ -133,9 +133,9 @@ in it. The array may contain:
   serialized (default: `md5`)
 
 - `default_content_type` _(mixed[])_: Default content type for `GET` requests.
-  It is combined with resource's content types
+  It is combined with resource's `GET` handlers
 
-  The default is `application/json` with internal handlers and priority 1
+  The default is `application/json` with internal handlers
 
 - `default_filters` _(string|string[]|null)_: Default value for resources'
   filters. See more in [Resources list] `filters` option
@@ -282,11 +282,12 @@ it gathers request data:
   - `X-HTTP-Method-Override`: If your clients can not work with `PUT`, `PATCH`
     or `DELETE`, they can use it to replace `POST` method
 
-  - `Content-Type`: Data sent in the payload is expected to be
-    `application/json`
+  - `Content-Type`: Data in the request payload is expected to be
+    `application/json` by default. Resources may specify more types they read
+    with external handlers
 
-  - `Accept`: The Router responses, by default, with `application/json`. But
-    resources may define specific content types, associated to external handlers
+  - `Accept`: The Router responses are, by default, in `application/json`. But
+    resources may define more types they output, associated to external handlers
 
   - `If-None-Match`: If caching headers are enabled, it is checked to see if a
     stale cache can still be used
@@ -329,7 +330,7 @@ The following HTTP methods are implemented by the Router class:
 
   Different content types can be [configured per resource][Resources list] and
   it is chosen based on request's `Accept` header. They will not send the
-  headers listed previously (unless the handler sends by itself)
+  headers listed previously (unless the external handler sends by itself)
 
 - `HEAD`: Does the same processing for `GET`, but only send headers (even for
   external handlers)
