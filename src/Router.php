@@ -660,14 +660,9 @@ class Router
             }
         } else {
             $resource_name = $resource['name'];
-            $resource_extension = $resource['extension'];
             $resource_data = $this->resources[$resource_name];
+            $resource_extension = $resource['extension'];
             $resource_accept = $this->extensions[$resource_extension] ?? null;
-
-            parse_str(parse_url($uri, PHP_URL_QUERY), $query);
-            $data = $this->parseBody($headers['Content-Type'] ?? '', $body);
-            $resource['query'] = $query;
-            $resource['data'] = $data;
 
             $methods = (array) ($resource_data['methods'] ?? null);
             if (!empty($methods)) {
@@ -685,6 +680,11 @@ class Router
                     );
                 }
             }
+
+            parse_str(parse_url($uri, PHP_URL_QUERY), $query);
+            $data = $this->parseBody($headers['Content-Type'] ?? '', $body);
+            $resource['query'] = $query;
+            $resource['data'] = $data;
 
             if ($safe_method) {
                 $resource_types = $this->computeResourceTypes($resource_name);
@@ -1423,12 +1423,11 @@ class Router
      */
     protected function parseRoute(string $uri)
     {
-        $result = [];
-
         $route = trim(urldecode(parse_url($uri, PHP_URL_PATH)), '/');
         if ($route === '') {
             return;
         }
+
         $extension = null;
         if (!empty($this->extensions)) {
             foreach (array_keys($this->extensions) as $ext) {
@@ -1441,8 +1440,12 @@ class Router
                 }
             }
         }
-        $result['extension'] = $extension;
-        $result['route'] = "/$route";
+
+        $result = [
+            'route' => "/$route",
+            'extension' => $extension,
+        ];
+
         $route = explode('/', $route);
 
         $model = $previous = null;
