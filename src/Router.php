@@ -84,6 +84,13 @@ class Router
     ];
 
     /**
+     * If a POST request can be replaced with a X-Http-Method-Override header
+     *
+     * @const boolean
+     */
+    const ENABLE_METHOD_OVERRIDE = true;
+
+    /**
      * Maps filter operators in query parameters to their Medoo counterpart
      *
      * NOTE:
@@ -650,7 +657,9 @@ class Router
             'Bearer'
         );
 
-        if (strcasecmp($method, 'POST') === 0) {
+        if (static::ENABLE_METHOD_OVERRIDE
+            && strcasecmp($method, 'POST') === 0
+        ) {
             $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
         }
         $this->method = strtoupper($actual_method ?? $method);
@@ -672,7 +681,7 @@ class Router
 
         if ($resource === null) {
             if ($this->method !== 'OPTIONS') {
-                $response = $this->requestRoot();
+                $response = $this->requestRoot($headers, $body);
             }
         } else {
             $resource_name = $resource['name'];
@@ -1229,10 +1238,16 @@ class Router
     /**
      * When requested route is '/'
      *
+     * NOTE:
+     * - Parameters are ignored here. But they exist for children classes
+     *
+     * @param array  $headers Request Headers
+     * @param string $body    Request Body
+     *
      * @return Response With $meta and a row count for each resource. If $meta
      *                  is empty, only the resource count is included
      */
-    protected function requestRoot()
+    protected function requestRoot(array $headers, string $body)
     {
         $authorization = $this->getAuthorizedResources();
 
@@ -1278,7 +1293,7 @@ class Router
      * @return float[] With 'type' => priority
      *                 Keys may contain '*'
      */
-    protected static function parseAccept(string $accept)
+    public static function parseAccept(string $accept)
     {
         $result = [];
 
@@ -1376,7 +1391,7 @@ class Router
      * @return string
      * @return string[] With keys 'mime', and 'charset' and/or 'boundary'
      */
-    protected static function parseContentType(string $content_type)
+    public static function parseContentType(string $content_type)
     {
         $directives = array_map('trim', explode(';', $content_type));
 
@@ -1816,7 +1831,7 @@ class Router
      *
      * @return float[] With 'type' => priority
      */
-    protected static function compareAccept(string $accept, array $available)
+    public static function compareAccept(string $accept, array $available)
     {
         $result = [];
         foreach (static::parseAccept($accept) as $type => $priority) {
@@ -1927,7 +1942,7 @@ class Router
      * @return mixed $list key
      * @return null  If no value was higher than $min
      */
-    protected static function firstHigher(
+    public static function firstHigher(
         array $list,
         float $min = null,
         float $max = null
@@ -2269,7 +2284,7 @@ class Router
      *                 Key in $model_class
      * @return null    On failure
      */
-    protected static function reverseForeignKey(
+    public static function reverseForeignKey(
         string $model_class,
         Model $target
     ) {
