@@ -168,10 +168,7 @@ class Router
      * @var mixed[]
      */
     protected $default_content_type = [
-        'application/json' => [
-            'handler' => null,
-            'priority' => 1,
-        ],
+        'application/json' => '__DEFAULT__',
     ];
 
     /**
