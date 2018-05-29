@@ -681,7 +681,7 @@ class Router
 
         if ($resource === null) {
             if ($this->method !== 'OPTIONS') {
-                $response = $this->requestRoot();
+                $response = $this->requestRoot($headers, $body);
             }
         } else {
             $resource_name = $resource['name'];
@@ -1238,10 +1238,16 @@ class Router
     /**
      * When requested route is '/'
      *
+     * NOTE:
+     * - Parameters are ignored here. But they exist for children classes
+     *
+     * @param array  $headers Request Headers
+     * @param string $body    Request Body
+     *
      * @return Response With $meta and a row count for each resource. If $meta
      *                  is empty, only the resource count is included
      */
-    protected function requestRoot()
+    protected function requestRoot(array $headers, string $body)
     {
         $authorization = $this->getAuthorizedResources();
 
