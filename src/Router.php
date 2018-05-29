@@ -1359,6 +1359,34 @@ class Router
     }
 
     /**
+     * Parses a Content-Type header
+     *
+     * @param string $content_type Content-Type header to be parsed
+     *
+     * @return string
+     * @return string[] With keys 'mime', and 'charset' and/or 'boundary'
+     */
+    protected static function parseContentType(string $content_type)
+    {
+        $directives = array_map('trim', explode(';', $content_type));
+
+        $result = [
+            'mime' => array_shift($directives)
+        ];
+
+        if (empty($directives)) {
+            return $result['mime'];
+        }
+
+        foreach ($directives as $directive) {
+            $parts = explode('=', $directive);
+            $result[$parts[0]] = $parts[1];
+        }
+
+        return $result;
+    }
+
+    /**
      * Parses fields query and validate against a resource
      *
      * @param Resource $resource Resource

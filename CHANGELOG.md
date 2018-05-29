@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `handlers` resource config
 - `Router::compareAccept()`
 - `Router::getAcceptedType()`
+- `Router::parseContentType()`
 
 ### Changed
 - Update dependencies
