@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update `Router::parseBody()`
 - Update `Router::run()`
 - Route extensions are only used in `GET` and `HEAD` requests
+- Allow using a different Router in the Controller
 
 ### Deprecated
 
