@@ -293,6 +293,13 @@ class Router
     protected $method;
 
     /**
+     * If $method is in SAFE_METHODS
+     *
+     * @var boolean
+     */
+    protected $safe_method;
+
+    /**
      * List of resources available in the Router
      *
      * Each key is a resource name which maps to a Fully Qualified Model Class
@@ -638,6 +645,7 @@ class Router
             $actual_method = $headers['X-Http-Method-Override'] ?? 'POST';
         }
         $this->method = strtoupper($actual_method ?? $method);
+        $this->safe_method = in_array($this->method, static::SAFE_METHODS);
 
         $allow = $this->implemented_methods;
         if (!in_array($this->method, $allow)) {
@@ -649,7 +657,6 @@ class Router
                 $allow
             );
         }
-        $safe_method = in_array($this->method, static::SAFE_METHODS);
 
         $resource = $this->parseRoute($uri);
         $response = null;
@@ -686,7 +693,7 @@ class Router
             $resource['query'] = $query;
             $resource['data'] = $data;
 
-            if ($safe_method) {
+            if ($this->safe_method) {
                 $resource_types = $this->computeResourceTypes($resource_name);
                 if ($resource_accept !== null
                     && !array_key_exists($resource_accept, $resource_types)
@@ -807,7 +814,6 @@ class Router
         $response = $this->prepareResponse();
 
         $where = $resource->where;
-        $safe_method = in_array($this->method, static::SAFE_METHODS);
         $resource_query = $resource->query;
         $fields = $this->parseFields($resource);
         $has_fields = ($resource->query['fields'] ?? '') !== '';
@@ -931,7 +937,7 @@ class Router
         /*
          * Per page and page query parameters
          */
-        $per_page = ($safe_method || isset($resource_query['page']))
+        $per_page = ($this->safe_method || isset($resource_query['page']))
             ? $this->per_page
             : 0;
         $per_page = $resource_query['per_page'] ?? $per_page;
@@ -952,7 +958,7 @@ class Router
                 );
             }
 
-            if ($safe_method) {
+            if ($this->safe_method) {
                 $count = $this->countResource($resource->name, $where);
                 $pages = ceil($count / $per_page);
                 $routes = [];
