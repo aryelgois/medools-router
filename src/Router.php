@@ -727,7 +727,7 @@ class Router
                 if ($prefered_type === null) {
                     $accepted = (empty($available))
                         ? null
-                        : $accepted = $this->getAcceptedType(
+                        : $accepted = $this->getAcceptedResourceType(
                             $resource_name,
                             $headers['Accept'] ?? '*/*'
                         );
@@ -1971,11 +1971,7 @@ class Router
     /**
      * Determines an accepted Content-Type for a Resource
      *
-     * NOTE:
-     * - If $resource does not comply to $accept, but at least one of its
-     *   available content types is not forbidden by $accept (i.e. ';q=0'),
-     *   it is returned. It is better to respond something the client doesn't
-     *   complain about than a useless error
+     * @see getAcceptedType()
      *
      * @param string $resource Resource name
      * @param string $accept   Accept header
@@ -1985,7 +1981,7 @@ class Router
      * @throws RouterException If $resource has invalid Content-Type
      * @throws RouterException If no content type is acceptable
      */
-    protected function getAcceptedType(string $resource, string $accept)
+    protected function getAcceptedResourceType(string $resource, string $accept)
     {
         $available = array_keys($this->getAvailableTypes($resource));
         if (empty($available)) {
@@ -1995,6 +1991,33 @@ class Router
             );
         }
 
+        $accepted = static::getAcceptedType($accept, $available);
+        if ($accepted === false) {
+            $message = "Resource '$resource' can not generate content"
+                . ' complying to Accept header';
+            $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+        }
+
+        return $accepted;
+    }
+
+    /**
+     * Determines an accepted Content-Type from a list
+     *
+     * NOTE:
+     * - If no $available content types match $accept, but at least one of them
+     *   is not forbidden by $accept (i.e. ';q=0'), it is returned. It is better
+     *   to respond something the client doesn't complain about than a useless
+     *   error message
+     *
+     * @param string   $accept    Accept header
+     * @param string[] $available List of available content types
+     *
+     * @return string
+     * @return false  If no content type is acceptable
+     */
+    public static function getAcceptedType(string $accept, array $available)
+    {
         $list = static::compareAccept($accept, $available);
         if (empty($list)) {
             return $available[0];
@@ -2008,15 +2031,13 @@ class Router
         $forbidden = array_filter($list, function ($value) {
             return $value === 0;
         });
-        $available = array_diff($available, array_keys($forbidden));
+        $allowed = array_diff($available, array_keys($forbidden));
 
-        if (empty($available)) {
-            $message = "Resource '$resource' can not generate content"
-                . ' complying to Accept header';
-            $this->sendError(static::ERROR_NOT_ACCEPTABLE, $message);
+        if (empty($allowed)) {
+            return false;
         }
 
-        return array_values($available)[0];
+        return array_values($allowed)[0];
     }
 
     /**
