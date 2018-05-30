@@ -2020,7 +2020,7 @@ class Router
     {
         $list = static::compareAccept($accept, $available);
         if (empty($list)) {
-            return $available[0];
+            return array_values($available)[0];
         }
 
         $result = static::firstHigher($list);
