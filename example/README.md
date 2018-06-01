@@ -14,11 +14,8 @@ default server credentials in `../config/medools.php`.
 lists the defaut [Person] model. You can edit it to include more. If you prefer,
 you can keep this file outside of your public directory.
 
-`api/.htaccess` does the magic of redirecting the routes to `api/index.php`. It
-also has a commented `SSLRequireSSL` directive. It is highly recommended that
-you use SSL.
-
-`api/index.php` gathers request data and pass to the Router.
+`api/.htaccess` does the magic of redirecting the routes to `api/index.php`,
+which gathers request data and pass to the Router.
 
 The client needs to request data from `api/`.
 
@@ -26,6 +23,9 @@ If you configure `authentication` in `api/router.json`, the client needs to
 authenticate at `api/auth/` and send the JWT in a Bearer `Authorization` Header
 to other routes. If `authentication` is not configured, `api/auth/` will return
 `204`.
+
+If you are using HTTPS, uncomment the line with `SSLRequireSSL` directive in
+`.htaccess`. It is highly recommended that you use SSL.
 
 > The best is _to follow_ this example to create an API for a project you
 > already have, with some models and a configured database.
