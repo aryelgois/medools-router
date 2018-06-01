@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Security
+- Was leaking implemented and allowed methods when `OPTIONS` is not implemented
+
 
 ## [0.3.1] - 2018-05-30
 
