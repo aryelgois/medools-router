@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- Sometimes `ob_flush()` complains that there is no buffer
+
 
 ## [0.3.2] - 2018-05-31
 
